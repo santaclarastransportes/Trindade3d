@@ -2,13 +2,15 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>TRINDADE ONLINE — Cidade Aberta</title>
 <meta name="theme-color" content="#101c29">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <style>
 :root{--bg:#0b1420;--panel:#111f2d;--panel2:#1b2c3b;--line:#ffffff24;--txt:#f5f8fc;--muted:#a9bac8;--blue:#1685f8;--green:#54e0b0;--gold:#ffcb57}
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#9cc9df;color:var(--txt);font-family:Inter,system-ui,Arial,sans-serif}button,input,select{font:inherit}button{border:0;border-radius:12px;padding:11px 14px;font-weight:800;background:var(--blue);color:white;cursor:pointer;touch-action:manipulation}button:active{transform:scale(.97)}button.secondary{background:#293d4e;border:1px solid var(--line)}button.green{background:#16a879}button.gold{background:#c98c19;color:#17120a}input,select{width:100%;padding:11px;border-radius:10px;border:1px solid var(--line);background:#0b1722;color:white;outline:none}
-#game{position:absolute;inset:0}canvas{display:block}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#9cc9df;color:var(--txt);font-family:Inter,system-ui,Arial,sans-serif;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;overscroll-behavior:none}button,input,select{font:inherit}button{border:0;border-radius:12px;padding:11px 14px;font-weight:800;background:var(--blue);color:white;cursor:pointer;touch-action:manipulation}button:active{transform:scale(.97)}button.secondary{background:#293d4e;border:1px solid var(--line)}button.green{background:#16a879}button.gold{background:#c98c19;color:#17120a}input,select{width:100%;padding:11px;border-radius:10px;border:1px solid var(--line);background:#0b1722;color:white;outline:none;user-select:text;-webkit-user-select:text}
+#game{position:absolute;inset:0;z-index:0;background:#9bc8df;touch-action:none;cursor:grab}#game:active{cursor:grabbing}#game canvas{display:block;width:100%;height:100%;touch-action:none}
 .hud{position:absolute;z-index:5;pointer-events:none}.hud>*{pointer-events:auto}
 .brand{top:14px;left:14px;background:#0c1929eF;border:1px solid var(--line);border-radius:17px;padding:10px 15px;box-shadow:0 8px 28px #0004}.brand strong{font-size:17px;letter-spacing:.8px}.brand small{display:block;color:#b9c9d5;font-size:11px;margin-top:2px}
 .topright{top:14px;right:14px;display:flex;gap:8px;align-items:center}.pill{background:#0c1929eF;border:1px solid var(--line);border-radius:14px;padding:10px 13px;font-size:12px;font-weight:800;box-shadow:0 8px 28px #0003}
@@ -19,32 +21,55 @@
 #mini{width:100%;height:100%}
 .bottomnav{bottom:13px;left:50%;transform:translateX(-50%);display:flex;gap:6px;background:#0b1724eF;border:1px solid var(--line);border-radius:18px;padding:7px;box-shadow:0 8px 28px #0005}
 .bottomnav button{background:transparent;padding:10px 13px;font-size:12px;min-width:68px}.bottomnav button.active{background:#176ed0}
+.act{position:absolute;z-index:6;left:50%;bottom:68px;transform:translateX(-50%);display:none;box-shadow:0 8px 24px #0006}
 .joy{position:absolute;z-index:6;left:18px;bottom:22px;width:132px;height:132px;border-radius:50%;background:#10233788;border:2px solid #ffffff50;display:none;touch-action:none}
-.joy:before{content:"";position:absolute;inset:14px;border:1px solid #ffffff30;border-radius:50%}
-.knob{position:absolute;width:52px;height:52px;left:38px;top:38px;border-radius:50%;background:#d9e9f5b8;border:2px solid white;box-shadow:0 3px 12px #0006;pointer-events:none}
-.run{position:absolute;z-index:6;right:20px;bottom:32px;width:68px;height:68px;border-radius:50%;background:#0c1c2dcc;border:1px solid #ffffff55;font-size:25px}
-.toast{position:absolute;z-index:20;left:50%;top:18px;transform:translateX(-50%);background:#0c1929ef;border:1px solid var(--line);padding:11px 16px;border-radius:13px;font-size:12px;display:none;max-width:90%;text-align:center}
+.joy:before{content:"";position:absolute;inset:14px;border:1px solid #ffffff30;border-radius:50%;pointer-events:none}
+.knob{position:absolute;width:52px;height:52px;left:calc(50% - 26px);top:calc(50% - 26px);border-radius:50%;background:#d9e9f5b8;border:2px solid white;box-shadow:0 3px 12px #0006;pointer-events:none;will-change:transform}
+.run{position:absolute;z-index:6;right:20px;bottom:32px;width:68px;height:68px;border-radius:50%;background:#0c1c2dcc;border:1px solid #ffffff55;font-size:25px;touch-action:none}
+.run.on{background:#176ed0}
+.lookhint{position:absolute;z-index:4;right:30%;top:50%;transform:translateY(-50%);font-size:12px;color:#ffffffcc;background:#0c1929aa;border-radius:12px;padding:8px 12px;pointer-events:none;transition:opacity .8s;display:none}
+.toast{position:absolute;z-index:20;left:50%;top:18px;transform:translateX(-50%);background:#0c1929ef;border:1px solid var(--line);padding:11px 16px;border-radius:13px;font-size:12px;display:none;max-width:90%;text-align:center;pointer-events:none}
 .modal{position:absolute;z-index:30;inset:0;background:#030a12b8;display:none;align-items:center;justify-content:center;padding:15px}.modal.open{display:flex}
 .dialog{width:min(470px,100%);max-height:90vh;overflow:auto;background:linear-gradient(145deg,#172a3b,#0d1926);border:1px solid #ffffff2b;border-radius:21px;padding:18px;box-shadow:0 18px 60px #0008}
 .dialog h2{margin:0 0 6px;font-size:20px}.dialog p{font-size:13px;color:var(--muted);line-height:1.5}.dialog label{display:block;font-size:12px;color:#c1d0dc;margin:12px 0 5px}.row{display:flex;gap:8px}.row>*{flex:1;min-width:0}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.property-card{background:#0a1723;border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:10px}.property-card b{display:block}.property-card small{color:var(--muted)}.swatches{display:flex;gap:8px;flex-wrap:wrap}.swatch{width:34px;height:34px;border-radius:50%;border:2px solid #ffffff70;padding:0}
 #propertyList{max-height:42vh;overflow:auto}
-@media(pointer:coarse){.joy{display:block}.profile{top:78px;width:205px;padding:9px}.profile-actions button{padding:9px;font-size:11px}.profile .sub{font-size:10px}.help{display:none}.minimap{top:auto;bottom:165px;width:112px;height:112px;right:10px}.bottomnav{bottom:10px;left:50%;width:max-content;max-width:96%;gap:0}.bottomnav button{min-width:0;padding:10px 9px;font-size:10px}.topright{top:12px}.topright .pill{padding:8px;font-size:10px}.brand{top:12px;left:10px;padding:8px 10px}.brand strong{font-size:13px}.brand small{font-size:9px}.run{display:block}}
+#rotate{position:fixed;inset:0;z-index:80;background:#0b1420;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:24px}
+#rotate .ph{font-size:64px;animation:rot 2s ease-in-out infinite}
+@keyframes rot{0%,20%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
+#rotate h2{margin:0}#rotate p{margin:0;color:var(--muted);font-size:14px;max-width:320px}
+@media(pointer:coarse){
+ .joy{display:block;left:calc(env(safe-area-inset-left,0px) + 22px);bottom:20px;width:128px;height:128px}
+ .profile{top:52px;left:10px;width:auto;padding:6px 10px;border-radius:14px}.profile-actions{display:none}.profile .sub{display:none}.face{width:32px;height:32px;font-size:19px;border-radius:10px}.profile-name{font-size:12px}
+ .help{display:none}
+ .minimap{top:52px;bottom:auto;right:10px;width:92px;height:92px;border-width:3px}
+ .bottomnav{bottom:8px;gap:0;padding:4px;border-radius:15px}.bottomnav button{min-width:0;padding:8px 10px;font-size:10px}
+ .topright{top:10px;right:10px}.topright .pill{padding:7px 9px;font-size:10px}.topright button{padding:7px 10px}
+ .brand{top:10px;left:10px;padding:6px 10px;border-radius:13px}.brand strong{font-size:12px}.brand small{font-size:9px}
+ .run{display:block;right:calc(env(safe-area-inset-right,0px) + 24px);bottom:22px;width:64px;height:64px}
+ .act{bottom:56px;padding:9px 14px;font-size:12px}
+ .dialog{max-height:94vh;padding:14px}
+ .lookhint{display:block}
+}
+@media(pointer:coarse) and (orientation:portrait){#rotate{display:flex}}
 @media(pointer:fine){.run{display:none}}
 </style>
 </head>
 <body>
 <div id="game"></div>
 <div class="hud brand"><strong>🏙️ TRINDADE ONLINE</strong><small>Trindade do Sul • Mundo aberto</small></div>
-<div class="hud topright"><div class="pill" id="online">🟢 1 online</div><div class="pill">🪙 <span id="coins">1.250</span></div><button class="secondary" id="settingsBtn">⚙</button></div>
+<div class="hud topright"><div class="pill" id="online">🟢 1 online</div><div class="pill">🪙 <span id="coins">1.250</span></div><button class="secondary" id="fsBtn" title="Tela cheia">⛶</button><button class="secondary" id="settingsBtn">⚙</button></div>
 <div class="hud profile">
  <div class="profile-head"><div class="face" id="facePreview">🧑</div><div><div class="profile-name" id="hudName">Visitante</div><div class="sub">⭐ Nível 1 • Cidadão</div></div></div>
- <div class="profile-actions"><button id="customBtn">👕 Personalizar personagem</button><button class="secondary" id="myHomeBtn">🏠 Meus imóveis</button><button class="secondary" id="centerBtn">📍 Minha posição</button></div>
+ <div class="profile-actions"><button id="customBtn">👕 Personalizar personagem</button><button class="secondary" id="myHomeBtn">🏠 Meus imóveis</button><button class="secondary" id="centerBtn">📍 Centralizar câmera</button></div>
 </div>
-<div class="hud help"><b>COMO JOGAR</b><br>WASD ou setas para andar. No celular, use o joystick. Aproxime-se de uma placa de imóvel e toque em comprar para adquirir uma casa ou terreno.</div>
+<div class="hud help"><b>COMO JOGAR</b><br>WASD ou setas para andar. Arraste o mouse na tela para olhar ao redor, roda do mouse para zoom. No celular, use o joystick e arraste o dedo na tela para girar a câmera.</div>
 <div class="hud minimap"><canvas id="mini" width="220" height="220"></canvas></div>
 <div class="hud bottomnav"><button id="mapBtn">🗺️ Mapa</button><button id="propertiesBtn">🏘️ Imóveis</button><button id="customNav">👕 Roupas</button><button id="socialBtn">👥 Social</button></div>
+<button class="act green" id="actBtn">🏠 Ver imóvel</button>
 <div class="joy" id="joy"><div class="knob" id="knob"></div></div><button class="run" id="runBtn">🏃</button>
+<div class="lookhint" id="lookHint">👆 Arraste aqui para olhar ao redor</div>
 <div class="toast" id="toast"></div>
+<div id="rotate"><div class="ph">📱</div><h2>Gire o celular</h2><p>Trindade Online funciona em tela horizontal. Vire o aparelho de lado (e desative o bloqueio de rotação, se precisar).</p><button id="rotateFs">Tela cheia / horizontal</button></div>
 
 <div class="modal" id="propertyModal"><div class="dialog">
  <h2 id="propTitle">Imóvel</h2><p id="propDesc">Detalhes do imóvel selecionado.</p>
@@ -67,39 +92,39 @@
 </div></div>
 <div class="modal" id="socialModal"><div class="dialog"><h2>👥 Comunidade</h2><p>O espaço social ficará disponível quando o multiplayer estiver conectado. Os jogadores conectados aparecerão no mundo e no contador online.</p><button class="secondary" data-close="socialModal" style="width:100%">Fechar</button></div></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/three.min.js"></script>
+
+<div class="modal" id="builderModal"><div class="dialog"><h2>🛠️ Editor de mundo infinito</h2><p>Escolha o objeto e toque no terreno para construir. Use apagar e toque num objeto para removê-lo.</p><label>Ferramenta</label><select id="buildTool"><option value="select">Selecionar / mover</option><option value="road">Estrada reta</option><option value="building">Edifício simples</option><option value="market">Atacarejo Bandiera (modelo do print)</option><option value="delete">Excluir objeto</option></select><div class="grid2"><div><label>Largura (metros)</label><input id="buildWidth" type="number" value="12" min="2" max="500"></div><div><label>Comprimento (metros)</label><input id="buildLength" type="number" value="30" min="2" max="500"></div></div><div class="grid2"><div><label>Altura edifício</label><input id="buildHeight" type="number" value="8" min="2" max="100"></div><div><label>Rotação</label><select id="buildRotation"><option value="0">0°</option><option value="1.5708">90°</option><option value="3.14159">180°</option><option value="4.71239">270°</option></select></div></div><div class="row" style="margin-top:14px"><button class="secondary" id="saveWorldBtn">💾 Salvar mundo</button><button class="secondary" id="clearWorldBtn">🧹 Limpar construções</button></div><div class="row" style="margin-top:10px"><button class="secondary" data-close="builderModal">Fechar</button><button class="green" id="marketBtn">📍 Criar mercado aqui</button></div></div></div>
 <script>
-(()=>{'use strict';
+function loadThreeEngine(){
+ const sources=['https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js','https://cdnjs.cloudflare.com/ajax/libs/three.js/0.152.2/three.min.js','https://unpkg.com/three@0.152.2/build/three.min.js'];
+ return new Promise((resolve,reject)=>{let i=0;const next=()=>{if(i>=sources.length){reject(new Error('Não foi possível carregar o motor 3D. Verifique a internet ou bloqueios do navegador.'));return;}const sc=document.createElement('script');sc.src=sources[i++];sc.onload=()=>window.THREE?resolve():next();sc.onerror=next;document.head.appendChild(sc)};next()});
+}
+function showStartupError(message){const box=document.createElement('div');box.style.cssText='position:absolute;z-index:50;left:50%;top:50%;transform:translate(-50%,-50%);width:min(90%,420px);padding:20px;border-radius:18px;background:#102337;color:white;border:1px solid #ffffff55;box-shadow:0 15px 45px #0008;text-align:center;font:14px system-ui';const h=document.createElement('h2');h.textContent='Não foi possível abrir o mapa 3D';const p=document.createElement('p');p.textContent=message;const b=document.createElement('button');b.textContent='Tentar novamente';b.onclick=()=>location.reload();box.append(h,p,b);document.body.appendChild(box)}
+loadThreeEngine().then(()=>startGame()).catch(e=>showStartupError(e.message));
+function startGame(){'use strict';
 const $=id=>document.getElementById(id), toast=t=>{const el=$('toast');el.textContent=t;el.style.display='block';clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.style.display='none',2800)};
-const START={x:0,z:8};let scene,camera,renderer,clock,player,playerParts={},running=false,move={x:0,z:0},keys={},lastNet=0,db=null,uid='local-'+Math.random().toString(36).slice(2),firebaseOn=false,remote={},selected=null,coins=1250;
+const isTouch=matchMedia('(pointer:coarse)').matches;
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const START={x:0,z:8};let scene,camera,renderer,clock,player,playerParts={},running=false,lastNet=0,db=null,uid='local-'+Math.random().toString(36).slice(2),firebaseOn=false,remote={},selected=null,nearProp=null,coins=1250;
+// Entrada separada: joystick e teclado não se sobrescrevem mais
+const joyVec={x:0,z:0},keyVec={x:0,z:0},keys={};
+// Estado de movimento e câmera
+const vel={x:0,z:0};let walkPhase=0,frameN=0;
+let camYaw=0,camPitch=.5,camDist=11;let buildObjects=[],buildMode='select',raycaster,mouseNdc,groundPlane;const camTarget={x:START.x,y:1.6,z:START.z};
 let appearance={skin:'#f1c49a',hair:'#171717',shirt:'#171f2d',pants:'#222831',name:'Visitante'};
 const properties=[];
 function makeWorld(){
  scene=new THREE.Scene();scene.background=new THREE.Color(0x9bc8df);scene.fog=new THREE.Fog(0x9bc8df,95,240);
- camera=new THREE.PerspectiveCamera(58,innerWidth/innerHeight,.1,500);
- renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;$('game').appendChild(renderer.domElement);
+ camera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,.1,500);
+ try{renderer=new THREE.WebGLRenderer({antialias:!isTouch,powerPreference:'high-performance'});}catch(err){throw new Error('Seu navegador não conseguiu iniciar o WebGL: '+err.message)}
+ renderer.setPixelRatio(Math.min(devicePixelRatio,isTouch?1.5:2));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=isTouch?THREE.PCFShadowMap:THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;$('game').appendChild(renderer.domElement);
  clock=new THREE.Clock();
  scene.add(new THREE.HemisphereLight(0xd9efff,0x65705b,2.1));
- const sun=new THREE.DirectionalLight(0xfff1d4,2.4);sun.position.set(-45,75,35);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-100;sun.shadow.camera.right=100;sun.shadow.camera.top=100;sun.shadow.camera.bottom=-100;scene.add(sun);
- const ground=new THREE.Mesh(new THREE.PlaneGeometry(260,260),new THREE.MeshStandardMaterial({color:0x72945f,roughness:1}));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
- // Central roads and sidewalks
- road(0,0,260,13);road(0,0,13,260);road(0,34,220,10);road(34,0,10,220);road(-38,-36,95,9);
- sidewalk(0,8,260,2);sidewalk(0,-8,260,2);sidewalk(8,0,2,260);sidewalk(-8,0,2,260);
- // City blocks, parks, plaza and town hall
- plaza(-22,-20,34,28);building(-22,-29,18,8,7,0xe2d7c2,'PREFEITURA');building(25,-23,11,9,18,0xe7d9c5,'IGREJA');building(42,27,12,10,10,0xd7c4a6,'COMÉRCIO');
- for(let i=0;i<18;i++){let x=(i%6)*19-48,z=Math.floor(i/6)*26+34;tree(x,z);tree(x+7,z+3)}
- // Decorative residential streets and lots
- let idx=1;
- for(let z=-60;z<=60;z+=24)for(let x=-62;x<=62;x+=24){
-  if(Math.abs(x)<17||Math.abs(z)<17)continue;
-  const type=idx%3===0?'terreno':'casa', price=type==='casa'?850:420;
-  const p={id:'imovel-'+idx,type,price,x:x+5,z:z+5,ownerUid:null,ownerName:null};
-  properties.push(p);lot(p);idx++;
- }
- // Trees, street lamps, road markings
- for(let z=-110;z<=110;z+=22){lamp(10,z);lamp(-10,z)}
- for(let i=-120;i<=120;i+=12){dash(i,0)}
- createPlayer();camera.position.set(0,7,15);camera.lookAt(0,1,0);
+ const sun=new THREE.DirectionalLight(0xfff1d4,2.4);sun.position.set(-45,75,35);sun.castShadow=true;const sm=isTouch?1024:2048;sun.shadow.mapSize.set(sm,sm);sun.shadow.camera.left=-100;sun.shadow.camera.right=100;sun.shadow.camera.top=100;sun.shadow.camera.bottom=-100;scene.add(sun);
+ const ground=new THREE.Mesh(new THREE.PlaneGeometry(100000,100000),new THREE.MeshStandardMaterial({color:0x72945f,roughness:1}));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;ground.name='infinite-ground';scene.add(ground);
+ // terreno vazio, sem ruas/casas/prédios pré-existentes
+ raycaster=new THREE.Raycaster();mouseNdc=new THREE.Vector2();groundPlane=new THREE.Plane(new THREE.Vector3(0,1,0),0);
+ createPlayer();loadBuilds();updateCamera(1);
 }
 function mat(color,roughness=.85){return new THREE.MeshStandardMaterial({color,roughness})}
 function box(x,y,z,w,h,d,color,opts={}){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(color));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;scene.add(m);return m}
@@ -134,42 +159,123 @@ function makeHumanoid(){
  g.position.set(START.x,0,START.z);scene.add(g);return {group:g,parts};
 }
 function createPlayer(){const o=makeHumanoid();player=o.group;playerParts=o.parts}
-function refreshAvatar(){if(!player)return;scene.remove(player);const o=makeHumanoid();player=o.group;playerParts=o.parts;$('facePreview').textContent='🧑';}
-function animate(){
- requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.04);
- let x=move.x,z=move.z;const speed=running?8:4.4;
- const len=Math.hypot(x,z);if(len>.08){x/=Math.max(1,len);z/=Math.max(1,len);player.position.x+=x*speed*dt;player.position.z+=z*speed*dt;player.rotation.y=Math.atan2(x,z);const t=clock.elapsedTime*9*(running?1.35:1);playerParts.legL.rotation.x=Math.sin(t)*.55;playerParts.legR.rotation.x=-Math.sin(t)*.55;playerParts.armL.rotation.x=-Math.sin(t)*.35;playerParts.armR.rotation.x=Math.sin(t)*.35;}else{['legL','legR','armL','armR'].forEach(k=>playerParts[k].rotation.x*=.75)}
- camera.position.lerp(new THREE.Vector3(player.position.x,player.position.y+6.3,player.position.z+10.5),.09);camera.lookAt(player.position.x,1.2,player.position.z);
- properties.forEach(p=>{if(p.marker)p.marker.material.color.set(p.ownerUid?'#e4a43c':'#55e6b6')});
- renderer.render(scene,camera);drawMini();checkNearby();syncPosition();
+function refreshAvatar(){if(!player)return;const pos=player.position.clone(),ry=player.rotation.y;scene.remove(player);const o=makeHumanoid();player=o.group;playerParts=o.parts;player.position.copy(pos);player.rotation.y=ry;$('facePreview').textContent='🧑';}
+
+// Câmera orbital em volta do jogador (arrastar = olhar ao redor)
+function updateCamera(dt){
+ const k=1-Math.exp(-dt*14);
+ camTarget.x+=(player.position.x-camTarget.x)*k;camTarget.z+=(player.position.z-camTarget.z)*k;camTarget.y=1.7;
+ const cp=Math.cos(camPitch);
+ camera.position.set(camTarget.x+Math.sin(camYaw)*cp*camDist,camTarget.y+Math.sin(camPitch)*camDist,camTarget.z+Math.cos(camYaw)*cp*camDist);
+ camera.lookAt(camTarget.x,camTarget.y,camTarget.z);
 }
-function drawMini(){const c=$('mini'),ctx=c.getContext('2d'),w=c.width,h=c.height;ctx.clearRect(0,0,w,h);ctx.fillStyle='#273f3b';ctx.fillRect(0,0,w,h);ctx.strokeStyle='#8b9692';ctx.lineWidth=13;for(let i=0;i<5;i++){ctx.beginPath();ctx.moveTo(i*60-20,0);ctx.lineTo(i*60+40,h);ctx.stroke()}ctx.fillStyle='#f5f7fa';ctx.beginPath();ctx.arc(w/2,h/2,7,0,7);ctx.fill();ctx.fillStyle='#f0b34b';properties.filter(p=>p.ownerUid).forEach(p=>{let xx=w/2+(p.x-player.position.x)*1.15,yy=h/2+(p.z-player.position.z)*1.15;if(xx>0&&xx<w&&yy>0&&yy<h){ctx.beginPath();ctx.arc(xx,yy,3,0,7);ctx.fill()}})}
-function checkNearby(){let near=null,dist=999;properties.forEach(p=>{let d=Math.hypot(p.x-player.position.x,p.z-player.position.z);if(d<9&&d<dist){near=p;dist=d}});if(near&&near!==selected){selected=near;toast((near.ownerUid?'Imóvel de '+near.ownerName:'Imóvel disponível')+' • toque em comprar/inspecionar');showProperty(near,false)}}
+function animate(){
+ requestAnimationFrame(animate);
+ const dt=Math.min(clock.getDelta(),.05);
+ // entrada combinada (joystick + teclado)
+ let ix=joyVec.x+keyVec.x,iz=joyVec.z+keyVec.z;let len=Math.hypot(ix,iz);if(len>1){ix/=len;iz/=len;len=1}
+ const sy=Math.sin(camYaw),cy=Math.cos(camYaw),maxSp=running?8.2:4.6;
+ // direção relativa à câmera: frente = (-sin, -cos), direita = (cos, -sin)
+ const tx=(cy*ix+sy*iz)*maxSp,tz=(-sy*ix+cy*iz)*maxSp;
+ const acc=1-Math.exp(-dt*(len>0?11:14));
+ vel.x+=(tx-vel.x)*acc;vel.z+=(tz-vel.z)*acc;
+ player.position.x+=vel.x*dt;player.position.z+=vel.z*dt;
+ const sp=Math.hypot(vel.x,vel.z);
+ if(sp>.2){let d=Math.atan2(vel.x,vel.z)-player.rotation.y;d=Math.atan2(Math.sin(d),Math.cos(d));player.rotation.y+=d*(1-Math.exp(-dt*13))}
+ // animação proporcional à velocidade
+ walkPhase+=dt*sp*1.9;const amp=Math.min(sp/4.6,1.5)*.55;
+ playerParts.legL.rotation.x=Math.sin(walkPhase)*amp;playerParts.legR.rotation.x=-Math.sin(walkPhase)*amp;
+ playerParts.armL.rotation.x=-Math.sin(walkPhase)*amp*.65;playerParts.armR.rotation.x=Math.sin(walkPhase)*amp*.65;
+ updateCamera(dt);
+ renderer.render(scene,camera);
+ frameN++;if(frameN%3===0){drawMini();properties.forEach(p=>{if(p.marker)p.marker.material.color.set(p.ownerUid?'#e4a43c':'#55e6b6')})}
+ if(frameN%6===0)checkNearby();
+ syncPosition();
+}
+function drawMini(){const c=$('mini'),ctx=c.getContext('2d'),w=c.width,h=c.height;ctx.clearRect(0,0,w,h);ctx.fillStyle='#273f3b';ctx.fillRect(0,0,w,h);ctx.strokeStyle='#8b9692';ctx.lineWidth=13;for(let i=0;i<5;i++){ctx.beginPath();ctx.moveTo(i*60-20,0);ctx.lineTo(i*60+40,h);ctx.stroke()}ctx.fillStyle='#f0b34b';properties.filter(p=>p.ownerUid).forEach(p=>{let xx=w/2+(p.x-player.position.x)*1.15,yy=h/2+(p.z-player.position.z)*1.15;if(xx>0&&xx<w&&yy>0&&yy<h){ctx.beginPath();ctx.arc(xx,yy,3,0,7);ctx.fill()}});ctx.fillStyle='#f5f7fa';ctx.beginPath();ctx.arc(w/2,h/2,7,0,7);ctx.fill()}
+function checkNearby(){let near=null,dist=999;properties.forEach(p=>{let d=Math.hypot(p.x-player.position.x,p.z-player.position.z);if(d<9&&d<dist){near=p;dist=d}});
+ if(near!==nearProp){nearProp=near;if(near){selected=near;toast((near.ownerUid?'Imóvel de '+near.ownerName:'Imóvel disponível')+' • toque em "Ver imóvel"');showProperty(near,false)}}
+ $('actBtn').style.display=nearProp?'block':'none'}
 function showProperty(p,open=true){selected=p;$('propTitle').textContent=(p.type==='casa'?'🏠 Casa':'🌳 Terreno')+' • '+p.id;$('propDesc').textContent=p.type==='casa'?'Casa residencial em bairro da cidade.':'Terreno disponível para construir sua própria casa.';$('propPrice').textContent='🪙 '+p.price.toLocaleString('pt-BR')+' STACOINS';$('propStatus').textContent=p.ownerUid?'Proprietário: '+p.ownerName:'Disponível para compra';$('buyBtn').textContent=p.ownerUid?(p.ownerUid===uid?'Seu imóvel':'Já possui proprietário'):'Comprar agora';$('buyBtn').disabled=!!p.ownerUid;$('buyBtn').style.opacity=p.ownerUid?.55:1;if(open)$('propertyModal').classList.add('open')}
-function renderProperties(){const box=$('propertyList');box.innerHTML='';properties.forEach(p=>{const d=document.createElement('div');d.className='property-card';d.innerHTML=`<b>${p.type==='casa'?'🏠 Casa':'🌳 Terreno'} — ${p.id}</b><small>${p.ownerUid?'Proprietário: '+escapeHtml(p.ownerName||'Jogador'):'Disponível'} • ${p.price} STACOINS</small><div style="margin-top:8px"><button class="${p.ownerUid?'secondary':'green'}" ${p.ownerUid?'disabled':''} data-id="${p.id}">${p.ownerUid?'Ocupado':'Ver imóvel'}</button></div>`;box.appendChild(d)});box.querySelectorAll('button[data-id]').forEach(b=>b.onclick=()=>{let p=properties.find(x=>x.id===b.dataset.id);if(p){player.position.set(p.x,0,p.z+10);$('propertiesModal').classList.remove('open');showProperty(p)}})}
+function renderProperties(){const box=$('propertyList');box.innerHTML='';properties.forEach(p=>{const d=document.createElement('div');d.className='property-card';d.innerHTML=`<b>${p.type==='casa'?'🏠 Casa':'🌳 Terreno'} — ${p.id}</b><small>${p.ownerUid?'Proprietário: '+escapeHtml(p.ownerName||'Jogador'):'Disponível'} • ${p.price} STACOINS</small><div style="margin-top:8px"><button class="${p.ownerUid?'secondary':'green'}" ${p.ownerUid?'disabled':''} data-id="${p.id}">${p.ownerUid?'Ocupado':'Ver imóvel'}</button></div>`;box.appendChild(d)});box.querySelectorAll('button[data-id]').forEach(b=>b.onclick=()=>{let p=properties.find(x=>x.id===b.dataset.id);if(p){player.position.set(p.x,0,p.z+10);vel.x=vel.z=0;$('propertiesModal').classList.remove('open');showProperty(p)}})}
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 async function buyProperty(){const p=selected;if(!p)return;if(p.ownerUid){toast('Este imóvel já tem proprietário.');return}if(coins<p.price){toast('Saldo insuficiente para comprar este imóvel.');return}const data={ownerUid:uid,ownerName:appearance.name,purchasedAt:Date.now()};try{if(firebaseOn){const ref=db.ref('trindade/properties/'+p.id);const result=await ref.transaction(current=>{if(current&&current.ownerUid)return;return {...(current||{}),...data,type:p.type,price:p.price,x:p.x,z:p.z}});if(!result.committed){toast('Outro jogador comprou este imóvel primeiro.');return}}else{localStorage.setItem('trindade_properties',JSON.stringify(properties.map(q=>q.id===p.id?{...q,...data}:q)))}p.ownerUid=uid;p.ownerName=appearance.name;coins-=p.price;$('coins').textContent=coins.toLocaleString('pt-BR');$('propertyModal').classList.remove('open');renderProperties();toast('Parabéns! Imóvel registrado em nome de '+appearance.name+'.');}catch(e){toast('Não foi possível registrar a compra: '+e.message)}}
 function loadLocal(){try{let saved=JSON.parse(localStorage.getItem('trindade_properties')||'[]');saved.forEach(s=>{let p=properties.find(x=>x.id===s.id);if(p&&s.ownerUid){p.ownerUid=s.ownerUid;p.ownerName=s.ownerName;p.purchasedAt=s.purchasedAt}});let a=JSON.parse(localStorage.getItem('trindade_avatar')||'null');if(a){appearance={...appearance,...a};$('hudName').textContent=appearance.name;$('nameInput').value=appearance.name;}}catch(e){}}
 function syncPosition(){if(!firebaseOn||!db||Date.now()-lastNet<900)return;lastNet=Date.now();db.ref('trindade/players/'+uid).update({uid,name:appearance.name,x:player.position.x,z:player.position.z,updatedAt:Date.now()}).catch(()=>{})}
 async function connectFirebase(){const cfg={apiKey:$('fbApi').value.trim(),authDomain:$('fbAuth').value.trim(),databaseURL:$('fbDb').value.trim(),projectId:$('fbProject').value.trim(),appId:$('fbApp').value.trim()};if(Object.values(cfg).some(v=>!v)){ $('fbStatus').textContent='Preencha todos os campos.';return} $('fbStatus').textContent='Conectando...';try{await loadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js');await loadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js');await loadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js');if(!firebase.apps.length)firebase.initializeApp(cfg);await firebase.auth().signInAnonymously();db=firebase.database();uid=firebase.auth().currentUser.uid;firebaseOn=true;const ref=db.ref('trindade/properties');const snap=await ref.get();const remoteProps=snap.val()||{};properties.forEach(p=>{if(remoteProps[p.id]){p.ownerUid=remoteProps[p.id].ownerUid||null;p.ownerName=remoteProps[p.id].ownerName||null}});ref.on('value',s=>{const vals=s.val()||{};properties.forEach(p=>{if(vals[p.id]){p.ownerUid=vals[p.id].ownerUid||null;p.ownerName=vals[p.id].ownerName||null}else{p.ownerUid=null;p.ownerName=null}});renderProperties()});db.ref('trindade/players').on('value',s=>{const v=s.val()||{};$('online').textContent='🟢 '+Object.keys(v).length+' online'});db.ref('trindade/players/'+uid).onDisconnect().remove();$('fbStatus').textContent='Conectado! Imóveis e jogadores sincronizados.';toast('Multiplayer conectado!')}catch(e){$('fbStatus').textContent='Erro: '+e.message}}
 function loadScript(src){return new Promise((res,rej)=>{let s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(Error('Falha ao carregar Firebase'));document.head.appendChild(s)})}
+
+function groundPoint(e){const r=renderer.domElement.getBoundingClientRect();mouseNdc.set((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height)*2+1);raycaster.setFromCamera(mouseNdc,camera);const p=new THREE.Vector3();return raycaster.ray.intersectPlane(groundPlane,p)?p:null}
+function addBuild(kind,x,z,w,d,h,rot=0){let group=new THREE.Group();group.position.set(x,0,z);group.rotation.y=rot;scene.add(group);const m=(ww,hh,dd,yy,col)=>{let mesh=new THREE.Mesh(new THREE.BoxGeometry(ww,hh,dd),mat(col));mesh.position.set(0,yy,0);mesh.castShadow=true;mesh.receiveShadow=true;group.add(mesh);return mesh};
+ if(kind==='road'){m(w,.12,d,.06,0x343b40); // markings across segment, based on road orientation
+   for(let i=-w/2+2;i<w/2-1;i+=8)m(3,.035,.18,.14,0xf3d16a);}
+ else if(kind==='building'){m(w,h,d,h/2,0xd8d2c5);m(w+.3,.35,d+.3,h+.15,0x4c5861);for(let i=-w/2+1;i<w/2-1;i+=Math.max(2,w/6))m(.9,2,.12,1.5,0x648c9b);}
+ else if(kind==='market'){// fachada inspirada no Atacarejo Bandieira do print
+ m(w,1.1,d, h-0.55,0xc52e22);m(w+1,.65,d+.8,h+.12,0xd22d22);m(w*.78,.9,.45,h-1.35,0x37434a);m(w*.78,.75,.5,h-1.35,0x37434a);m(w*.76,.08,.55,h-1.8,0x30373c);
+ const front=-d/2;for(let xx=-w*.38;xx<=w*.38;xx+=w*.19){let win=new THREE.Mesh(new THREE.BoxGeometry(w*.16,3,.14),mat(0x4d7888));win.position.set(xx,2,front-.02);group.add(win);m(.18,4,.3,2,0xbcbdb8);}
+ m(w*.62,.95,.5,h-1.45,0x38434b); // placa
+ const plaque=m(w*.62,.95,.25,h-1.45,0x38434b);plaque.position.z=front-.35;
+ // letras 3D claras (simplificadas)
+ const labelCanvas=document.createElement('canvas');labelCanvas.width=1024;labelCanvas.height=160;const ctx=labelCanvas.getContext('2d');ctx.fillStyle='#3a444b';ctx.fillRect(0,0,1024,160);ctx.font='bold 72px Arial';ctx.fillStyle='#f3f3f3';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('Atacarejo Bandieira',512,80);const tex=new THREE.CanvasTexture(labelCanvas);const sign=new THREE.Mesh(new THREE.PlaneGeometry(w*.62,.95),new THREE.MeshBasicMaterial({map:tex}));sign.position.set(0,h-1.45,front-.49);group.add(sign);
+ // pilares escuros, calçada e carrinhos na frente
+ for(let xx=-w/2+.5;xx<=w/2-.5;xx+=w/2-.5)m(.5,5,.6,2.5,0x353b3d);m(w+3,.18,d*.35,.09,0xc5bba7);}
+ group.userData={kind,editable:true};buildObjects.push(group);return group;}
+function saveBuilds(){localStorage.setItem('trindade_builds',JSON.stringify(buildObjects.map(o=>({kind:o.userData.kind,x:o.position.x,z:o.position.z,w:o.userData.w,d:o.userData.d,h:o.userData.h,rot:o.rotation.y}))))}
+function loadBuilds(){try{let a=JSON.parse(localStorage.getItem('trindade_builds')||'[]');a.forEach(o=>{let g=addBuild(o.kind,o.x,o.z,o.w,o.d,o.h,o.rot);g.userData.w=o.w;g.userData.d=o.d;g.userData.h=o.h})}catch(_){}}
+function placeBuildAt(p,kind){let w=Number($('buildWidth').value)||12,d=Number($('buildLength').value)||30,h=Number($('buildHeight').value)||8,rot=Number($('buildRotation').value)||0;let g=addBuild(kind,p.x,p.z,w,d,h,rot);g.userData.w=w;g.userData.d=d;g.userData.h=h;saveBuilds();toast('Objeto construído!')}
+function removeBuildAt(p){let closest=null,dist=1e9;buildObjects.forEach(o=>{let q=new THREE.Vector3(o.position.x,0,o.position.z);let dd=q.distanceTo(p);if(dd<Math.max(o.userData.w||10,o.userData.d||10)/2+3&&dd<dist){closest=o;dist=dd}});if(closest){scene.remove(closest);buildObjects=buildObjects.filter(o=>o!==closest);saveBuilds();toast('Objeto excluído.')}else toast('Toque perto de um objeto construído.')}
+function marketAtPlayer(){placeBuildAt(new THREE.Vector3(player.position.x,0,player.position.z),'market')}
+$('buildTool').onchange=e=>buildMode=e.target.value;gameEl.addEventListener('pointerup',e=>{if(buildMode==='delete'){let p=groundPoint(e);if(p)removeBuildAt(p);return;}if(!buildMode||buildMode==='select'||buildMode==='delete'||!renderer)return;if(e.target.closest&&e.target.closest('.hud'))return;let p=groundPoint(e);if(!p)return;if(buildMode==='road'||buildMode==='building'||buildMode==='market')placeBuildAt(p,buildMode);});
+$('saveWorldBtn').onclick=()=>{saveBuilds();toast('Mundo salvo neste aparelho.')};$('clearWorldBtn').onclick=()=>{buildObjects.forEach(o=>scene.remove(o));buildObjects=[];saveBuilds();toast('Construções removidas.')};$('marketBtn').onclick=marketAtPlayer;
 function open(id){$(id).classList.add('open')}document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$(b.dataset.close).classList.remove('open'));
-$('buyBtn').onclick=buyProperty;$('propertiesBtn').onclick=()=>{renderProperties();open('propertiesModal')};$('myHomeBtn').onclick=()=>{renderProperties();$('propertyList').querySelectorAll('.property-card').forEach((el,i)=>{if(properties[i].ownerUid!==uid)el.style.display='none'});open('propertiesModal')};
+$('buyBtn').onclick=buyProperty;$('actBtn').onclick=()=>{if(nearProp)showProperty(nearProp,true)};
+$('propertiesBtn').onclick=()=>{renderProperties();open('propertiesModal')};$('myHomeBtn').onclick=()=>{renderProperties();$('propertyList').querySelectorAll('.property-card').forEach((el,i)=>{if(properties[i].ownerUid!==uid)el.style.display='none'});open('propertiesModal')};
 $('customBtn').onclick=$('customNav').onclick=()=>{ $('nameInput').value=appearance.name;open('customModal')};
-$('settingsBtn').onclick=()=>open('settingsModal');$('connectBtn').onclick=connectFirebase;$('socialBtn').onclick=()=>open('socialModal');$('centerBtn').onclick=()=>{camera.position.set(player.position.x,player.position.y+6,player.position.z+10);camera.lookAt(player.position)};
-$('mapBtn').onclick=()=>toast('Você está explorando Trindade do Sul. Os marcadores verdes indicam imóveis livres.');
+$('settingsBtn').onclick=()=>open('settingsModal');$('connectBtn').onclick=connectFirebase;$('socialBtn').onclick=()=>open('socialModal');
+$('centerBtn').onclick=()=>{camYaw=player.rotation.y+Math.PI;camPitch=.5};
+$('mapBtn').onclick=()=>open('builderModal');
 $('saveCustom').onclick=()=>{appearance.name=$('nameInput').value.trim()||'Visitante';appearance.skin=$('skin').value;appearance.hair=$('hair').value;localStorage.setItem('trindade_avatar',JSON.stringify(appearance));$('hudName').textContent=appearance.name;refreshAvatar();$('customModal').classList.remove('open');toast('Personagem atualizado!')};
 function colorPicker(id,key,colors){const el=$(id);colors.forEach(c=>{let b=document.createElement('button');b.className='swatch';b.style.background=c;b.onclick=()=>{appearance[key]=c;el.querySelectorAll('button').forEach(x=>x.style.outline='');b.style.outline='3px solid white'};el.appendChild(b)})}
 colorPicker('shirtColors','shirt',['#151d2b','#1764b0','#b52b2b','#16835c','#e0e2e5','#e5a12c','#6d43a8']);colorPicker('pantsColors','pants',['#17191e','#283e59','#55585e','#9a9a92','#5a382b']);
-$('runBtn').onpointerdown=()=>running=true;$('runBtn').onpointerup=$('runBtn').onpointercancel=()=>running=false;
-document.addEventListener('keydown',e=>{let k=e.key.toLowerCase();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright','shift'].includes(k)){keys[k]=true;if(k==='shift')running=true}});document.addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;if(e.key==='Shift')running=false});
-function updateKeys(){move.x=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0);move.z=(keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0)}
-const joy=$('joy'),knob=$('knob');let joyId=null;function joyMove(e){const r=joy.getBoundingClientRect(),dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2),max=40,len=Math.hypot(dx,dy),x=len>max?dx/len*max:dx,z=len>max?dy/len*max:dy;knob.style.transform=`translate(${x}px,${z}px)`;move.x=x/max;move.z=z/max}
-joy.onpointerdown=e=>{joyId=e.pointerId;joy.setPointerCapture(e.pointerId);joyMove(e)};joy.onpointermove=e=>{if(e.pointerId===joyId)joyMove(e)};function joyEnd(){joyId=null;knob.style.transform='translate(0,0)';move.x=0;move.z=0}joy.onpointerup=joy.onpointercancel=joyEnd;
-setInterval(updateKeys,40);
-addEventListener('resize',()=>{if(!renderer)return;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+
+// Tela cheia + travar em horizontal (quando o navegador permite)
+async function goFull(){try{const el=document.documentElement;if(!document.fullscreenElement&&el.requestFullscreen)await el.requestFullscreen();if(screen.orientation&&screen.orientation.lock)await screen.orientation.lock('landscape')}catch(e){}}
+$('fsBtn').onclick=goFull;$('rotateFs').onclick=goFull;
+
+// Correr
+const runBtn=$('runBtn');const setRun=v=>{running=v;runBtn.classList.toggle('on',v)};
+runBtn.onpointerdown=e=>{runBtn.setPointerCapture(e.pointerId);setRun(true)};runBtn.onpointerup=runBtn.onpointercancel=()=>setRun(false);
+
+// Teclado (agora só atualiza keyVec; não mexe no joystick)
+function updateKeys(){keyVec.x=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0);keyVec.z=(keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0)}
+document.addEventListener('keydown',e=>{if(e.target&&['INPUT','SELECT'].includes(e.target.tagName))return;const k=e.key.toLowerCase();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(k)){keys[k]=true;updateKeys();e.preventDefault()}if(k==='shift')setRun(true)});
+document.addEventListener('keyup',e=>{const k=e.key.toLowerCase();keys[k]=false;updateKeys();if(k==='shift')setRun(false)});
+addEventListener('blur',()=>{for(const k in keys)keys[k]=false;updateKeys();setRun(false)});
+
+// Joystick analógico: zona morta + curva suave, ignora outros dedos
+const joy=$('joy'),knob=$('knob');let joyId=null;const JMAX=46,DEAD=.1;
+function joyMove(e){const r=joy.getBoundingClientRect(),dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2),len=Math.hypot(dx,dy)||1,m=Math.min(len,JMAX);
+ const kx=dx/len*m,ky=dy/len*m;knob.style.transform=`translate3d(${kx}px,${ky}px,0)`;
+ let mag=m/JMAX;if(mag<DEAD){joyVec.x=joyVec.z=0;return}mag=(mag-DEAD)/(1-DEAD);mag=Math.min(1,mag*1.08);
+ joyVec.x=dx/len*mag;joyVec.z=dy/len*mag}
+function joyEnd(e){if(e&&e.pointerId!==joyId)return;joyId=null;knob.style.transform='translate3d(0,0,0)';joyVec.x=0;joyVec.z=0}
+joy.addEventListener('pointerdown',e=>{if(joyId!==null)return;joyId=e.pointerId;joy.setPointerCapture(e.pointerId);joyMove(e);e.preventDefault()});
+joy.addEventListener('pointermove',e=>{if(e.pointerId===joyId)joyMove(e)});
+joy.addEventListener('pointerup',joyEnd);joy.addEventListener('pointercancel',joyEnd);joy.addEventListener('lostpointercapture',joyEnd);
+
+// Olhar ao redor: arrastar o dedo (ou o mouse) na tela gira a câmera
+const gameEl=$('game'),looks=new Map();
+gameEl.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button!==0)return;looks.set(e.pointerId,{x:e.clientX,y:e.clientY});try{gameEl.setPointerCapture(e.pointerId)}catch(_){}$('lookHint').style.opacity=0});
+gameEl.addEventListener('pointermove',e=>{const l=looks.get(e.pointerId);if(!l)return;const dx=e.clientX-l.x,dy=e.clientY-l.y;l.x=e.clientX;l.y=e.clientY;const s=e.pointerType==='mouse'?.0055:.0075;camYaw-=dx*s;camPitch=clamp(camPitch+dy*s*.7,.1,1.3)});
+const lookEnd=e=>looks.delete(e.pointerId);gameEl.addEventListener('pointerup',lookEnd);gameEl.addEventListener('pointercancel',lookEnd);
+gameEl.addEventListener('wheel',e=>{camDist=clamp(camDist+e.deltaY*.01,6,18);e.preventDefault()},{passive:false});
+gameEl.addEventListener('contextmenu',e=>e.preventDefault());
+setTimeout(()=>{const h=$('lookHint');if(h)h.style.opacity=0},6000);
+
+function onResize(){if(!renderer)return;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)}
+addEventListener('resize',onResize);addEventListener('orientationchange',()=>setTimeout(onResize,250));
 makeWorld();loadLocal();renderProperties();animate();
-})();
+}
 </script>
 </body>
 </html>
