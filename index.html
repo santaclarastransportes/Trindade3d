@@ -134,7 +134,7 @@ let spec=false,specY=0;const specPos={x:0,y:18,z:0},specVel={x:0,z:0};const joyV
 const vel={x:0,z:0};let walkPhase=0,frameN=0;
 let camYaw=0,camPitch=.5,camDist=11;const camTarget={x:START.x,y:1.6,z:START.z};
 let appearance={skin:'#f1c49a',hair:'#171717',shirt:'#171f2d',pants:'#222831',name:'Visitante'};
-const properties=[];
+const properties=[];const remoteHumans={};let remoteBuildIds=new Set();
 let groundMesh,sunLight,buildMode=false,curGroup=null,oidN=0;const worldGroups=[];let isAdmin=false;const ADMIN_UID='bsaez769YeMzZpKDEfPm4vSBcOp2';
 const add=o=>(curGroup||scene).add(o);
 function makeWorld(){
@@ -236,7 +236,7 @@ function renderProperties(){const box=$('propertyList');box.innerHTML='';propert
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 async function buyProperty(){const p=selected;if(!p)return;if(p.ownerUid){toast('Este imóvel já tem proprietário.');return}if(coins<p.price){toast('Saldo insuficiente para comprar este imóvel.');return}const data={ownerUid:uid,ownerName:appearance.name,purchasedAt:Date.now()};try{if(firebaseOn){const ref=db.ref('trindade/properties/'+p.id);const result=await ref.transaction(current=>{if(current&&current.ownerUid)return;return {...(current||{}),...data,type:p.type,price:p.price,x:p.x,z:p.z}});if(!result.committed){toast('Outro jogador comprou este imóvel primeiro.');return}}else{localStorage.setItem('trindade_properties',JSON.stringify(properties.map(q=>q.id===p.id?{...q,...data}:q)))}p.ownerUid=uid;p.ownerName=appearance.name;coins-=p.price;$('coins').textContent=coins.toLocaleString('pt-BR');$('propertyModal').classList.remove('open');renderProperties();toast('Parabéns! Imóvel registrado em nome de '+appearance.name+'.');}catch(e){toast('Não foi possível registrar a compra: '+e.message)}}
 function loadLocal(){try{let saved=JSON.parse(localStorage.getItem('trindade_properties')||'[]');saved.forEach(s=>{let p=properties.find(x=>x.id===s.id);if(p&&s.ownerUid){p.ownerUid=s.ownerUid;p.ownerName=s.ownerName;p.purchasedAt=s.purchasedAt}});let a=JSON.parse(localStorage.getItem('trindade_avatar')||'null');if(a){appearance={...appearance,...a};$('hudName').textContent=appearance.name;$('nameInput').value=appearance.name;}}catch(e){}}
-function syncPosition(){if(!firebaseOn||!db||Date.now()-lastNet<900)return;lastNet=Date.now();db.ref('trindade/players/'+uid).update({uid,name:appearance.name,x:player.position.x,z:player.position.z,updatedAt:Date.now()}).catch(()=>{})}
+function syncPosition(){if(!firebaseOn||!db||Date.now()-lastNet<900)return;lastNet=Date.now();db.ref('trindade/players/'+uid).update({uid,name:appearance.name,x:player.position.x,z:player.position.z,ry:player.rotation.y,updatedAt:Date.now()}).catch(()=>{})}
 async function connectFirebase(email,password){
  window.connectFirebase=connectFirebase;
  const cfg={apiKey:"AIzaSyAjiuxYJr2dq8e4SM9D3qkj2J1bvDUp8BE",authDomain:"trindade3d.firebaseapp.com",databaseURL:"https://trindade3d-default-rtdb.firebaseio.com",projectId:"trindade3d",storageBucket:"trindade3d.firebasestorage.app",messagingSenderId:"695673268409",appId:"1:695673268409:web:56a3f7306c71fe2ddad368"};
@@ -268,8 +268,10 @@ async function connectFirebase(email,password){
    properties.forEach(p=>{if(remoteProps[p.id]){p.ownerUid=remoteProps[p.id].ownerUid||null;p.ownerName=remoteProps[p.id].ownerName||null}});
    ref.on('value',s=>{const vals=s.val()||{};properties.forEach(p=>{if(vals[p.id]){p.ownerUid=vals[p.id].ownerUid||null;p.ownerName=vals[p.id].ownerName||null}else{p.ownerUid=null;p.ownerName=null}});renderProperties()});
    db.ref('trindade/players').on('value',s=>{$('online').textContent='🟢 '+Object.keys(s.val()||{}).length+' online'});
+   db.ref('trindade/players').on('value',s=>{const vals=s.val()||{};Object.entries(vals).forEach(([id,v])=>{if(id===uid)return;if(!remoteHumans[id]){const old=appearance;appearance={...appearance,name:v.name||'Jogador'};const h=makeHumanoid().group;appearance=old;remoteHumans[id]=h;scene.add(h)}const h=remoteHumans[id];h.position.set(Number(v.x)||0,0,Number(v.z)||0);h.rotation.y=Number(v.ry)||0;});Object.keys(remoteHumans).forEach(id=>{if(!vals[id]){scene.remove(remoteHumans[id]);delete remoteHumans[id]}})});
+   db.ref('trindade/buildings').on('value',s=>{const vals=s.val()||{};Object.keys(remoteBuildIds).forEach(id=>{});userObjs.forEach(g=>{if(g.userData.remote){scene.remove(g);const i=userObjs.indexOf(g);if(i>=0)userObjs.splice(i,1)}});remoteBuildIds=new Set();Object.entries(vals).forEach(([id,sp])=>{if(!sp||!BTYPES[sp.type])return;const g=buildObj(sp);g.userData.remote=true;g.userData.remoteId=id;scene.add(g);userObjs.push(g);remoteBuildIds.add(id)})});
    const playerRef=db.ref('trindade/players/'+uid);playerRef.onDisconnect().remove();
-   await withTimeout(playerRef.update({uid,name:appearance.name,x:player.position.x,z:player.position.z,updatedAt:Date.now()}),10000,'Registro do jogador');
+   await withTimeout(playerRef.update({uid,name:appearance.name,x:player.position.x,z:player.position.z,ry:player.rotation.y,updatedAt:Date.now()}),10000,'Registro do jogador');
    firebaseOn=true;$('fbStatus').textContent='Conectado e sincronizando';stage('Conectado!');
   }catch(syncErr){$('fbStatus').textContent='Offline do multiplayer: '+(syncErr.message||syncErr);console.warn('Firebase sync:',syncErr);stage('Login OK; conexão do mundo falhou: '+(syncErr.message||syncErr));}
  }catch(e){stage('ERRO: '+(e&&e.message||'Falha desconhecida'));throw e}
@@ -537,7 +539,7 @@ function buildHover(e){if(!buildMode)return;if(bDel){const g=pickG(e);if(g!==hov
 function removeG(g,silent){scene.remove(g);if(g.userData.prop){const i=properties.indexOf(g.userData.prop);if(i>=0)properties.splice(i,1)}
  if(g.userData.oid!==undefined)deletedOids.add(g.userData.oid);const i=userObjs.indexOf(g);if(i>=0)userObjs.splice(i,1)}
 function restoreG(g){scene.add(g);if(g.userData.prop&&!properties.includes(g.userData.prop))properties.push(g.userData.prop);if(g.userData.oid!==undefined)deletedOids.delete(g.userData.oid);if(g.userData.spec&&!userObjs.includes(g))userObjs.push(g)}
-function saveBuild(){try{localStorage.setItem('trindade_build',JSON.stringify({objs:userObjs.map(g=>g.userData.spec),del:[...deletedOids]}))}catch(e){}}
+function saveBuild(){try{const specs=userObjs.filter(g=>!g.userData.remote&&g.userData.spec).map(g=>g.userData.spec);localStorage.setItem('trindade_build',JSON.stringify({objs:specs,del:[...deletedOids]}));if(firebaseOn&&isAdmin&&db)db.ref('trindade/buildings').set(specs).catch(e=>toast('Falha ao sincronizar construções: '+e.message));}catch(e){}}
 function loadBuild(){try{const d=JSON.parse(localStorage.getItem('trindade_build')||'null');if(!d)return;(d.del||[]).forEach(id=>{const g=worldGroups.find(x=>x.userData.oid===id);if(g)removeG(g)});(d.objs||[]).forEach(s=>{if(!BTYPES[s.type])return;const g=buildObj(s);scene.add(g);userObjs.push(g)})}catch(e){}}
 function buildTap(e){if(!buildMode)return;
  if(bDel){const g=pickG(e);if(!g){toast('Toque em um objeto para excluir');return}tint(g,false);hoverG=null;removeG(g);undoStack.push({k:'del',g});saveBuild();renderProperties();toast('Objeto excluído • ↩ desfaz');return}
