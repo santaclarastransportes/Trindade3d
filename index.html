@@ -145,16 +145,28 @@ function makeWorld(){
   clock=new THREE.Clock();
   add(new THREE.HemisphereLight(0xe9f5ff,0x77796f,2.0));
   const sun=new THREE.DirectionalLight(0xffffff,2.0);sun.position.set(-45,75,35);sun.castShadow=true;const sm=isTouch?1024:2048;sun.shadow.mapSize.set(sm,sm);sun.shadow.camera.left=-100;sun.shadow.camera.right=100;sun.shadow.camera.top=100;sun.shadow.camera.bottom=-100;add(sun);add(sun.target);sunLight=sun;
-  const ground=new THREE.Mesh(new THREE.PlaneGeometry(4000,4000),new THREE.MeshStandardMaterial({color:0xbcebd2,roughness:1}));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;add(ground);groundMesh=ground;
-  const city=new THREE.Mesh(new THREE.PlaneGeometry(220,285),new THREE.MeshStandardMaterial({color:0xf0eff2,roughness:1}));
-  city.rotation.x=-Math.PI/2;city.position.set(0,.012,0);city.receiveShadow=true;add(city);
-  function street(points,width=2.05){
+  // Toda a área fora das ruas é gramado contínuo, sem piso urbano cinza.
+  const ground=new THREE.Mesh(new THREE.PlaneGeometry(4000,4000),new THREE.MeshStandardMaterial({color:0x79b978,roughness:1}));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;add(ground);groundMesh=ground;
+  function street(points,width=4.4){
+    const asphalt=new THREE.MeshStandardMaterial({color:0x555b60,roughness:1});
+    const edge=new THREE.MeshStandardMaterial({color:0xbfc5c8,roughness:1});
     for(let i=0;i<points.length-1;i++){
       const a=points[i],b=points[i+1],dx=b[0]-a[0],dz=b[1]-a[1],len=Math.hypot(dx,dz);
-      const m=new THREE.Mesh(new THREE.BoxGeometry(width,.07,len),new THREE.MeshStandardMaterial({color:0xc5cbd1,roughness:1}));
-      m.position.set((a[0]+b[0])/2,.055,(a[1]+b[1])/2);m.rotation.y=Math.atan2(dx,dz);m.receiveShadow=true;add(m);
+      const angle=Math.atan2(dx,dz),mx=(a[0]+b[0])/2,mz=(a[1]+b[1])/2;
+      // Faixas claras nas laterais e asfalto no centro, seguindo cada linha do mapa.
+      for(const side of [-1,1]){
+        const curb=new THREE.Mesh(new THREE.BoxGeometry(.22,.10,len+.25),edge);
+        curb.position.set(mx+Math.cos(angle)*side*(width/2+.08),.07,mz-Math.sin(angle)*side*(width/2+.08));
+        curb.rotation.y=angle;curb.receiveShadow=true;add(curb);
+      }
+      const m=new THREE.Mesh(new THREE.BoxGeometry(width,.12,len+.3),asphalt);
+      m.position.set(mx,.09,mz);m.rotation.y=angle;m.receiveShadow=true;add(m);
     }
-    points.forEach(p=>{const j=new THREE.Mesh(new THREE.CylinderGeometry(width/2,width/2,.07,12),new THREE.MeshStandardMaterial({color:0xc5cbd1,roughness:1}));j.position.set(p[0],.055,p[1]);add(j)});
+    // Liga os segmentos nos cruzamentos sem deixar buracos.
+    points.forEach(p=>{
+      const j=new THREE.Mesh(new THREE.CylinderGeometry(width/2,width/2,.12,16),asphalt);
+      j.position.set(p[0],.09,p[1]);j.receiveShadow=true;add(j);
+    });
   }
   const P=(x,y)=>[(x-540)*.205,(y-695)*.205];
   const paths=[
@@ -189,9 +201,9 @@ function makeWorld(){
    [[370,1180],[460,1200],[550,1230],[650,1260]],
    [[500,1300],[600,1320],[700,1350],[800,1390]]
   ];
-  paths.forEach(path=>street(path.map(([x,y])=>P(x,y)),1.65));
-  street([[360,-20],[300,95],[220,220],[140,355],[55,465],[-25,520]].map(([x,y])=>P(x,y)),3.7);
-  street([[-20,700],[80,735],[160,820],[230,925],[300,1035],[370,1180],[455,1395]].map(([x,y])=>P(x,y)),3.7);
+  paths.forEach(path=>street(path.map(([x,y])=>P(x,y)),4.2));
+  street([[360,-20],[300,95],[220,220],[140,355],[55,465],[-25,520]].map(([x,y])=>P(x,y)),7.2);
+  street([[-20,700],[80,735],[160,820],[230,925],[300,1035],[370,1180],[455,1395]].map(([x,y])=>P(x,y)),7.2);
   createPlayer();updateCamera(1);
 }
 function mat(color,roughness=.85){return new THREE.MeshStandardMaterial({color,roughness})}
