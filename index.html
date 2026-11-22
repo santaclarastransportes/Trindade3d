@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Trindade do Sul 3D</title>
+  <link href="https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.css" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; font-family: Arial, sans-serif; }
+    #map { position: absolute; inset: 0; }
+    .topbar { position: absolute; z-index: 2; top: 14px; left: 14px; right: 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; pointer-events: none; }
+    .brand, .actions { pointer-events: auto; background: rgba(255,255,255,.95); border-radius: 12px; box-shadow: 0 2px 12px #0002; padding: 10px 13px; }
+    .brand strong { display:block; font-size: 15px; }
+    .brand span { color:#555; font-size:12px; }
+    button { border: 0; border-radius: 9px; padding: 10px 12px; margin-left: 4px; background:#1769aa; color:white; font-weight:600; cursor:pointer; }
+    button.secondary { background:#e8eef4; color:#17324a; }
+    .help { position:absolute; z-index:2; bottom:18px; left:14px; max-width:min(360px, calc(100% - 28px)); padding:10px 13px; border-radius:10px; background:rgba(255,255,255,.94); box-shadow:0 2px 12px #0002; color:#333; font-size:12px; line-height:1.45; }
+    .maplibregl-ctrl-group { border-radius:10px !important; overflow:hidden; }
+    @media(max-width:560px) { .topbar { align-items:flex-start; } .actions { display:grid; grid-template-columns:1fr 1fr; gap:5px; padding:7px; } button { margin:0; padding:9px 8px; font-size:12px; } .brand { max-width:48%; } }
+  </style>
+</head>
+<body>
+  <div id="map" aria-label="Mapa 3D de Trindade do Sul"></div>
+  <div class="topbar">
+    <div class="brand"><strong>Trindade do Sul 3D</strong><span>Exploração virtual da cidade</span></div>
+    <div class="actions">
+      <button id="tilt">Visão 3D</button>
+      <button id="top" class="secondary">Vista de cima</button>
+      <button id="reset" class="secondary">Centralizar</button>
+    </div>
+  </div>
+  <div class="help" id="help">Carregando o mapa... Se demorar, confira sua conexão com a internet.</div>
+
+  <script src="https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.js"></script>
+  <script>
+    const centro = [-52.89942, -27.52156];
+    const help = document.getElementById('help');
+    const primaryStyle = 'https://tiles.openfreemap.org/styles/liberty';
+    const backupStyle = 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json';
+    let usingBackup = false;
+    let buildingsAdded = false;
+    const map = new maplibregl.Map({
+      container: 'map',
+      style: primaryStyle,
+      center: centro,
+      zoom: 14.5,
+      pitch: 50,
+      bearing: -15,
+      maxPitch: 85,
+      attributionControl: true
+    });
+    map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'bottom-right');
+    map.addControl(new maplibregl.ScaleControl({ maxWidth: 100, unit: 'metric' }), 'bottom-right');
+
+    function addBuildings() {
+      if (buildingsAdded) return;
+      const style = map.getStyle();
+      const sourceId = style.sources && style.sources.openmaptiles ? 'openmaptiles' : Object.keys(style.sources || {}).find(id => style.sources[id].type === 'vector');
+      if (!sourceId) return;
+      try {
+        const firstSymbol = (style.layers || []).find(layer => layer.type === 'symbol');
+        map.addLayer({
+          id: 'edificios-3d-trindade', source: sourceId, 'source-layer': 'building',
+          type: 'fill-extrusion', minzoom: 14,
+          paint: {
+            'fill-extrusion-color': '#b8c3cc',
+            'fill-extrusion-height': ['coalesce', ['get', 'render_height'], ['get', 'height'], 8],
+            'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], ['get', 'min_height'], 0],
+            'fill-extrusion-opacity': 0.88
+          }
+        }, firstSymbol && firstSymbol.id);
+        buildingsAdded = true;
+      } catch (e) { console.warn('Camada 3D indisponível:', e); }
+    }
+
+    map.on('load', () => {
+      help.textContent = 'Mapa carregado! Arraste para mover; use dois dedos para aproximar e incline com dois dedos. Os prédios 3D dependem dos dados disponíveis.';
+      addBuildings();
+    });
+    map.on('style.load', addBuildings);
+    map.on('error', (event) => {
+      console.warn('Erro ao carregar mapa:', event && event.error ? event.error : event);
+    });
+    // Se o primeiro provedor não responder, tenta automaticamente outro mapa gratuito.
+    setTimeout(() => {
+      if (!map.loaded() && !usingBackup) {
+        usingBackup = true;
+        help.textContent = 'O primeiro mapa demorou a responder. Tentando uma fonte gratuita alternativa...';
+        buildingsAdded = false;
+        map.setStyle(backupStyle);
+      }
+    }, 12000);
+
+    document.getElementById('tilt').addEventListener('click', () => map.easeTo({ pitch: 65, zoom: Math.max(map.getZoom(), 15.5), duration: 900 }));
+    document.getElementById('top').addEventListener('click', () => map.easeTo({ pitch: 0, bearing: 0, duration: 900 }));
+    document.getElementById('reset').addEventListener('click', () => map.flyTo({ center: centro, zoom: 14.5, pitch: 50, bearing: -15, duration: 1400 }));
+  </script>
+</body>
+</html>
