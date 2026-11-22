@@ -223,6 +223,8 @@ function animate(){
  playerParts.armL.rotation.x=-Math.sin(walkPhase)*amp*.65;playerParts.armR.rotation.x=Math.sin(walkPhase)*amp*.65;
  updateCamera(dt);
  renderer.render(scene,camera);
+ // Suaviza os movimentos dos jogadores remotos entre atualizações do Firebase
+ Object.values(remoteHumans).forEach(h=>{const t=h.userData.netTarget;if(t){const k=1-Math.exp(-dt*10);h.position.x+=(t.x-h.position.x)*k;h.position.z+=(t.z-h.position.z)*k;let da=t.ry-h.rotation.y;da=Math.atan2(Math.sin(da),Math.cos(da));h.rotation.y+=da*k;}});
  frameN++;if(frameN%3===0){drawMini();properties.forEach(p=>{if(p.marker)p.marker.material.color.set(p.ownerUid?'#e4a43c':'#55e6b6')})}
  if(frameN%6===0)checkNearby();
  syncPosition();
@@ -268,7 +270,7 @@ async function connectFirebase(email,password){
    properties.forEach(p=>{if(remoteProps[p.id]){p.ownerUid=remoteProps[p.id].ownerUid||null;p.ownerName=remoteProps[p.id].ownerName||null}});
    ref.on('value',s=>{const vals=s.val()||{};properties.forEach(p=>{if(vals[p.id]){p.ownerUid=vals[p.id].ownerUid||null;p.ownerName=vals[p.id].ownerName||null}else{p.ownerUid=null;p.ownerName=null}});renderProperties()});
    db.ref('trindade/players').on('value',s=>{$('online').textContent='🟢 '+Object.keys(s.val()||{}).length+' online'});
-   db.ref('trindade/players').on('value',s=>{const vals=s.val()||{};Object.entries(vals).forEach(([id,v])=>{if(id===uid)return;if(!remoteHumans[id]){const old=appearance;appearance={...appearance,name:v.name||'Jogador'};const h=makeHumanoid().group;appearance=old;remoteHumans[id]=h;scene.add(h)}const h=remoteHumans[id];h.position.set(Number(v.x)||0,0,Number(v.z)||0);h.rotation.y=Number(v.ry)||0;});Object.keys(remoteHumans).forEach(id=>{if(!vals[id]){scene.remove(remoteHumans[id]);delete remoteHumans[id]}})});
+   db.ref('trindade/players').on('value',s=>{const vals=s.val()||{};Object.entries(vals).forEach(([id,v])=>{if(id===uid)return;if(!remoteHumans[id]){const old=appearance;appearance={...appearance,name:v.name||'Jogador'};const h=makeHumanoid().group;appearance=old;remoteHumans[id]=h;h.position.set(Number(v.x)||0,0,Number(v.z)||0);h.rotation.y=Number(v.ry)||0;scene.add(h)}const h=remoteHumans[id];h.userData.netTarget={x:Number(v.x)||0,z:Number(v.z)||0,ry:Number(v.ry)||0};});Object.keys(remoteHumans).forEach(id=>{if(!vals[id]){scene.remove(remoteHumans[id]);delete remoteHumans[id]}})});
    db.ref('trindade/buildings').on('value',s=>{const vals=s.val()||{};Object.keys(remoteBuildIds).forEach(id=>{});userObjs.forEach(g=>{if(g.userData.remote){scene.remove(g);const i=userObjs.indexOf(g);if(i>=0)userObjs.splice(i,1)}});remoteBuildIds=new Set();Object.entries(vals).forEach(([id,sp])=>{if(!sp||!BTYPES[sp.type])return;const g=buildObj(sp);g.userData.remote=true;g.userData.remoteId=id;scene.add(g);userObjs.push(g);remoteBuildIds.add(id)})});
    const playerRef=db.ref('trindade/players/'+uid);playerRef.onDisconnect().remove();
    await withTimeout(playerRef.update({uid,name:appearance.name,x:player.position.x,z:player.position.z,ry:player.rotation.y,updatedAt:Date.now()}),10000,'Registro do jogador');
