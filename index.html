@@ -1,100 +1,170 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Trindade do Sul 3D</title>
-  <link href="https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.css" rel="stylesheet" />
-  <style>
-    * { box-sizing: border-box; }
-    html, body { margin: 0; height: 100%; font-family: Arial, sans-serif; }
-    #map { position: absolute; inset: 0; }
-    .topbar { position: absolute; z-index: 2; top: 14px; left: 14px; right: 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; pointer-events: none; }
-    .brand, .actions { pointer-events: auto; background: rgba(255,255,255,.95); border-radius: 12px; box-shadow: 0 2px 12px #0002; padding: 10px 13px; }
-    .brand strong { display:block; font-size: 15px; }
-    .brand span { color:#555; font-size:12px; }
-    button { border: 0; border-radius: 9px; padding: 10px 12px; margin-left: 4px; background:#1769aa; color:white; font-weight:600; cursor:pointer; }
-    button.secondary { background:#e8eef4; color:#17324a; }
-    .help { position:absolute; z-index:2; bottom:18px; left:14px; max-width:min(360px, calc(100% - 28px)); padding:10px 13px; border-radius:10px; background:rgba(255,255,255,.94); box-shadow:0 2px 12px #0002; color:#333; font-size:12px; line-height:1.45; }
-    .maplibregl-ctrl-group { border-radius:10px !important; overflow:hidden; }
-    @media(max-width:560px) { .topbar { align-items:flex-start; } .actions { display:grid; grid-template-columns:1fr 1fr; gap:5px; padding:7px; } button { margin:0; padding:9px 8px; font-size:12px; } .brand { max-width:48%; } }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Trindade Online — Mundo 3D</title>
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<style>
+:root{--bg:#101820;--panel:#17232d;--panel2:#20313e;--text:#f4f7fa;--muted:#a9bac7;--accent:#65e0b2;--gold:#ffd36a}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:Inter,system-ui,Arial,sans-serif;background:var(--bg);color:var(--text)}
+#map{position:absolute;inset:0;background:#d9e5e8}
+.top{position:absolute;z-index:5;top:12px;left:12px;right:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;pointer-events:none}
+.brand,.status,.panel,.mini-wrap,.controls{background:#14212ddd;border:1px solid #ffffff22;backdrop-filter:blur(12px);box-shadow:0 8px 30px #0003}
+.brand{padding:10px 14px;border-radius:16px;pointer-events:auto}.brand b{display:block;font-size:15px;letter-spacing:.2px}.brand small{color:var(--muted);font-size:11px}
+.status{padding:9px 12px;border-radius:14px;font-size:12px;color:var(--muted);pointer-events:auto}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#f0b44d;margin-right:6px}
+.panel{position:absolute;z-index:5;left:12px;top:88px;width:min(250px,calc(100vw - 24px));padding:13px;border-radius:18px}
+.panel h3{font-size:13px;margin:0 0 10px}.profile{display:flex;align-items:center;gap:10px;margin-bottom:12px}.avatar{width:42px;height:42px;border-radius:14px;background:#2b4555;display:grid;place-items:center;font-size:25px;border:1px solid #ffffff25}.profile input{width:100%;min-width:0}
+input,select,button{font:inherit}input,select{background:#0d1820;color:var(--text);border:1px solid #ffffff22;border-radius:10px;padding:9px;width:100%;outline:none}
+button{border:0;border-radius:11px;background:var(--accent);color:#10251f;font-weight:750;padding:10px 12px;cursor:pointer}
+button.secondary{background:#2b3d49;color:var(--text);border:1px solid #ffffff20}
+.actions{display:flex;gap:7px}.actions button{flex:1;font-size:12px}
+.hint{font-size:11px;color:var(--muted);line-height:1.45;margin:10px 0 0}
+.mini-wrap{position:absolute;z-index:5;right:12px;bottom:14px;width:154px;padding:8px;border-radius:16px}
+.mini-head{font-size:11px;font-weight:700;margin:0 0 6px;display:flex;justify-content:space-between}
+#mini{width:100%;height:116px;border-radius:10px;background:#263d49;display:block}
+.controls{position:absolute;z-index:5;left:50%;transform:translateX(-50%);bottom:14px;padding:8px;border-radius:16px;display:flex;gap:7px}
+.controls button{min-width:42px;padding:10px;background:#1e3440;color:white;border:1px solid #ffffff22}
+.controls button.active{background:var(--accent);color:#10251f}
+.notice{position:absolute;z-index:6;left:50%;transform:translateX(-50%);top:72px;background:#13232deF;border:1px solid #ffffff25;border-radius:12px;padding:9px 12px;font-size:12px;max-width:calc(100vw - 24px);text-align:center}
+.modal{position:absolute;z-index:10;inset:0;background:#071018bb;display:none;align-items:center;justify-content:center;padding:16px}
+.modal.open{display:flex}.dialog{width:min(440px,100%);background:#172630;border:1px solid #ffffff25;border-radius:20px;padding:18px;max-height:90vh;overflow:auto}
+.dialog h2{font-size:18px;margin:0 0 8px}.dialog p{color:var(--muted);font-size:13px;line-height:1.5}.dialog label{display:block;font-size:12px;color:var(--muted);margin:12px 0 5px}
+.dialog .row{display:flex;gap:8px}.dialog .row>*{flex:1}
+.emoji-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:7px;margin-top:8px}.emoji-grid button{font-size:22px;padding:8px;background:#263b48;color:white;border:1px solid #ffffff18}
+.emoji-grid button.selected{outline:2px solid var(--accent)}
+.maplibregl-ctrl-group{background:#172630!important}.maplibregl-ctrl button span{filter:invert(1)}
+@media(max-width:600px){.panel{top:78px;width:190px;padding:10px}.panel .hint{font-size:10px}.brand{padding:8px 10px}.brand b{font-size:13px}.status{font-size:10px;padding:8px}.mini-wrap{width:128px}.controls{bottom:150px}.notice{top:68px}}
+</style>
 </head>
 <body>
-  <div id="map" aria-label="Mapa 3D de Trindade do Sul"></div>
-  <div class="topbar">
-    <div class="brand"><strong>Trindade do Sul 3D</strong><span>Exploração virtual da cidade</span></div>
-    <div class="actions">
-      <button id="tilt">Visão 3D</button>
-      <button id="top" class="secondary">Vista de cima</button>
-      <button id="reset" class="secondary">Centralizar</button>
-    </div>
+<div id="map"></div>
+<div class="top">
+  <div class="brand"><b>🌆 TRINDADE ONLINE</b><small>Seu mundo • Trindade do Sul, RS</small></div>
+  <div class="status"><span class="dot" id="dot"></span><span id="connection">Modo demonstração</span></div>
+</div>
+<div class="notice" id="notice">Toque no mapa para caminhar • Use WASD ou as setas do teclado</div>
+<div class="panel">
+  <div class="profile">
+    <div class="avatar" id="avatarFace">🧑</div>
+    <div style="min-width:0;flex:1"><input id="playerName" maxlength="18" value="Visitante" aria-label="Seu nome"><div style="font-size:10px;color:var(--muted);margin-top:4px">Seu personagem</div></div>
   </div>
-  <div class="help" id="help">Carregando o mapa... Se demorar, confira sua conexão com a internet.</div>
-
-  <script src="https://unpkg.com/maplibre-gl@5.6.1/dist/maplibre-gl.js"></script>
-  <script>
-    const centro = [-52.89942, -27.52156];
-    const help = document.getElementById('help');
-    const primaryStyle = 'https://tiles.openfreemap.org/styles/liberty';
-    const backupStyle = 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json';
-    let usingBackup = false;
-    let buildingsAdded = false;
-    const map = new maplibregl.Map({
-      container: 'map',
-      style: primaryStyle,
-      center: centro,
-      zoom: 14.5,
-      pitch: 50,
-      bearing: -15,
-      maxPitch: 85,
-      attributionControl: true
-    });
-    map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'bottom-right');
-    map.addControl(new maplibregl.ScaleControl({ maxWidth: 100, unit: 'metric' }), 'bottom-right');
-
-    function addBuildings() {
-      if (buildingsAdded) return;
-      const style = map.getStyle();
-      const sourceId = style.sources && style.sources.openmaptiles ? 'openmaptiles' : Object.keys(style.sources || {}).find(id => style.sources[id].type === 'vector');
-      if (!sourceId) return;
-      try {
-        const firstSymbol = (style.layers || []).find(layer => layer.type === 'symbol');
-        map.addLayer({
-          id: 'edificios-3d-trindade', source: sourceId, 'source-layer': 'building',
-          type: 'fill-extrusion', minzoom: 14,
-          paint: {
-            'fill-extrusion-color': '#b8c3cc',
-            'fill-extrusion-height': ['coalesce', ['get', 'render_height'], ['get', 'height'], 8],
-            'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], ['get', 'min_height'], 0],
-            'fill-extrusion-opacity': 0.88
-          }
-        }, firstSymbol && firstSymbol.id);
-        buildingsAdded = true;
-      } catch (e) { console.warn('Camada 3D indisponível:', e); }
-    }
-
-    map.on('load', () => {
-      help.textContent = 'Mapa carregado! Arraste para mover; use dois dedos para aproximar e incline com dois dedos. Os prédios 3D dependem dos dados disponíveis.';
-      addBuildings();
-    });
-    map.on('style.load', addBuildings);
-    map.on('error', (event) => {
-      console.warn('Erro ao carregar mapa:', event && event.error ? event.error : event);
-    });
-    // Se o primeiro provedor não responder, tenta automaticamente outro mapa gratuito.
-    setTimeout(() => {
-      if (!map.loaded() && !usingBackup) {
-        usingBackup = true;
-        help.textContent = 'O primeiro mapa demorou a responder. Tentando uma fonte gratuita alternativa...';
-        buildingsAdded = false;
-        map.setStyle(backupStyle);
-      }
-    }, 12000);
-
-    document.getElementById('tilt').addEventListener('click', () => map.easeTo({ pitch: 65, zoom: Math.max(map.getZoom(), 15.5), duration: 900 }));
-    document.getElementById('top').addEventListener('click', () => map.easeTo({ pitch: 0, bearing: 0, duration: 900 }));
-    document.getElementById('reset').addEventListener('click', () => map.flyTo({ center: centro, zoom: 14.5, pitch: 50, bearing: -15, duration: 1400 }));
-  </script>
-</body>
-</html>
+  <div class="actions">
+    <button id="editBtn">Editar</button>
+    <button class="secondary" id="centerBtn">Minha posição</button>
+  </div>
+  <p class="hint">Caminhe clicando no mapa ou usando as teclas. O mini mapa mostra sua posição e, quando o multiplayer for configurado, os outros jogadores online.</p>
+  <button class="secondary" id="setupBtn" style="width:100%;margin-top:9px">Configurar multiplayer</button>
+</div>
+<div class="mini-wrap"><div class="mini-head"><span>MINI MAPA</span><span id="onlineCount">1 online</span></div><canvas id="mini" width="300" height="230"></canvas></div>
+<div class="controls">
+  <button id="up">▲</button><button id="left">◀</button><button id="down">▼</button><button id="right">▶</button>
+</div>
+<div class="modal" id="avatarModal"><div class="dialog">
+  <h2>Personalizar personagem</h2><p>Escolha o visual do seu avatar e o nome que os outros jogadores verão.</p>
+  <label>Nome</label><input id="editName" maxlength="18" placeholder="Seu nome">
+  <label>Personagem</label><div class="emoji-grid" id="emojiGrid"></div>
+  <div class="actions" style="margin-top:16px"><button class="secondary" data-close="avatarModal">Cancelar</button><button id="saveAvatar">Salvar personagem</button></div>
+</div></div>
+<div class="modal" id="setupModal"><div class="dialog">
+  <h2>Ativar multiplayer online</h2>
+  <p>O mapa e o personagem já funcionam em modo demonstração. Para que pessoas em celulares diferentes vejam umas às outras em tempo real, precisamos conectar um projeto Firebase gratuito. Crie um projeto no Firebase Console, ative <b>Authentication → Anonymous</b> e <b>Realtime Database</b>, e cole aqui a configuração do app Web.</p>
+  <label>Firebase apiKey</label><input id="fbApi" placeholder="AIza...">
+  <label>Firebase authDomain</label><input id="fbAuth" placeholder="seu-projeto.firebaseapp.com">
+  <label>Firebase databaseURL</label><input id="fbDb" placeholder="https://seu-projeto-default-rtdb.firebaseio.com">
+  <label>Firebase projectId</label><input id="fbProject" placeholder="seu-projeto">
+  <label>Firebase appId</label><input id="fbApp" placeholder="1:...:web:...">
+  <p style="font-size:11px">A configuração web não é uma senha. Não coloque aqui chaves privadas ou dados de cartão. O banco precisa de regras que exijam autenticação; instruções serão exibidas após salvar.</p>
+  <div class="actions"><button class="secondary" data-close="setupModal">Fechar</button><button id="connectFirebase">Conectar</button></div>
+  <p id="fbMessage" style="font-size:12px"></p>
+</div></div>
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script>
+(() => {
+ const start=[-52.89942,-27.52156], emojis=['🧑','👩','🧔','👨‍🦰','👩‍🦱','🧑‍🚀','🧙','🦸','🧑‍🎤','👮','🧑‍🍳','🧑‍🎨'];
+ let avatar='🧑', playerId='local-'+Math.random().toString(36).slice(2), players={}, db=null, fbReady=false, mapReady=false;
+ let pos={lng:start[0],lat:start[1]}, lastSent=0, keys={};
+ const $=id=>document.getElementById(id);
+ const map=new maplibregl.Map({container:'map',style:'https://tiles.openfreemap.org/styles/liberty',center:start,zoom:16.3,pitch:55,bearing:-15,antialias:true, attributionControl:true});
+ map.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'bottom-right');
+ map.on('load',()=>{
+   mapReady=true;
+   const layers=map.getStyle().layers||[];
+   let labelLayer=layers.find(l=>l.type==='symbol'&&l.layout&&l.layout['text-field']);
+   try{
+    map.addLayer({id:'3d-buildings',source:'openmaptiles', 'source-layer':'building',type:'fill-extrusion',
+      minzoom:14,paint:{'fill-extrusion-color':['case',['boolean',['feature-state','hover'],false],'#b8d8d0','#d6c9b6'],
+      'fill-extrusion-height':['coalesce',['get','render_height'],['get','height'],8],
+      'fill-extrusion-base':['coalesce',['get','render_min_height'],['get','min_height'],0],
+      'fill-extrusion-opacity':0.88}},labelLayer?labelLayer.id:undefined);
+   }catch(e){console.warn('Camada 3D indisponível',e)}
+   addLocalMarker(); drawMini(); setInterval(drawMini,900);
+ });
+ map.on('click',e=>moveTo(e.lngLat.lng,e.lngLat.lat));
+ function addLocalMarker(){
+   const el=document.createElement('div');el.style.cssText='font-size:28px;filter:drop-shadow(0 2px 3px #0008);cursor:pointer';
+   el.textContent=avatar;
+   window.localMarker=new maplibregl.Marker({element:el,anchor:'bottom'}).setLngLat([pos.lng,pos.lat]).addTo(map);
+ }
+ function refreshLocal(){if(window.localMarker){window.localMarker.getElement().textContent=avatar;window.localMarker.setLngLat([pos.lng,pos.lat])}}
+ function moveTo(lng,lat){pos={lng,lat};refreshLocal();sendPosition();drawMini()}
+ function walk(dx,dy){if(!mapReady)return;const c=map.project([pos.lng,pos.lat]);const p=map.unproject([c.x+dx,c.y+dy]);moveTo(p.lng,p.lat);map.easeTo({center:[pos.lng,pos.lat],duration:180})}
+ document.addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(['arrowup','arrowdown','arrowleft','arrowright','w','a','s','d'].includes(k)){e.preventDefault();keys[k]=true}});
+ document.addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+ setInterval(()=>{if(keys.w||keys.arrowup)walk(0,-9);if(keys.s||keys.arrowdown)walk(0,9);if(keys.a||keys.arrowleft)walk(-9,0);if(keys.d||keys.arrowright)walk(9,0)},110);
+ [['up',0,-18],['down',0,18],['left',-18,0],['right',18,0]].forEach(([id,x,y])=>$(id).addEventListener('click',()=>walk(x,y)));
+ $('centerBtn').onclick=()=>map.flyTo({center:[pos.lng,pos.lat],zoom:17.5,pitch:60});
+ $('playerName').onchange=()=>sendPosition();
+ $('editBtn').onclick=()=>{$('editName').value=$('playerName').value;$('avatarModal').classList.add('open')};
+ $('setupBtn').onclick=()=>$('setupModal').classList.add('open');
+ document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$ (b.dataset.close).classList.remove('open'));
+ emojis.forEach(e=>{const b=document.createElement('button');b.textContent=e;b.onclick=()=>{avatar=e;document.querySelectorAll('.emoji-grid button').forEach(x=>x.classList.remove('selected'));b.classList.add('selected')};if(e===avatar)b.classList.add('selected');$('emojiGrid').appendChild(b)});
+ $('saveAvatar').onclick=()=>{$('playerName').value=$('editName').value.trim()||'Visitante';$('avatarFace').textContent=avatar;if(window.localMarker)refreshLocal();$('avatarModal').classList.remove('open');sendPosition()};
+ function drawMini(){
+   const c=$('mini'),ctx=c.getContext('2d'),w=c.width,h=c.height;ctx.clearRect(0,0,w,h);ctx.fillStyle='#29434d';ctx.fillRect(0,0,w,h);
+   ctx.strokeStyle='#607a83';ctx.lineWidth=13;ctx.lineCap='round';
+   for(let i=0;i<5;i++){ctx.beginPath();ctx.moveTo(i*85-30,0);ctx.lineTo(i*85+60,h);ctx.stroke()}
+   ctx.strokeStyle='#b5c5bd';ctx.lineWidth=2;ctx.strokeRect(4,4,w-8,h-8);
+   const others=Object.values(players).filter(p=>p&&p.id!==playerId);
+   const all=[{...pos,emoji:avatar,local:true},...others];
+   all.forEach(p=>{let dx=(p.lng-pos.lng)*650000,dy=(pos.lat-p.lat)*650000;let x=w/2+dx,y=h/2+dy;if(x<8||x>w-8||y<8||y>h-8)return;ctx.beginPath();ctx.fillStyle=p.local?'#65e0b2':'#ffd36a';ctx.arc(x,y,p.local?8:7,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#10202a';ctx.lineWidth=2;ctx.stroke()});
+   $('onlineCount').textContent=(1+others.length)+' online';
+ }
+ function playerData(){return {id:playerId,name:$('playerName').value.trim()||'Visitante',emoji:avatar,lng:pos.lng,lat:pos.lat,updatedAt:Date.now()}}
+ async function sendPosition(){
+   if(!db||!fbReady)return;
+   const now=Date.now();if(now-lastSent<250)return;lastSent=now;
+   try{await db.ref('players/'+playerId).update(playerData())}catch(e){console.warn(e)}
+ }
+ async function connectFirebase(){
+   const cfg={apiKey:$('fbApi').value.trim(),authDomain:$('fbAuth').value.trim(),databaseURL:$('fbDb').value.trim(),projectId:$('fbProject').value.trim(),appId:$('fbApp').value.trim()};
+   if(Object.values(cfg).some(v=>!v)){$('fbMessage').textContent='Preencha todos os campos.';return}
+   $('fbMessage').textContent='Conectando...';
+   try{
+    await loadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js');
+    await loadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js');
+    await loadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js');
+    if(!firebase.apps.length)firebase.initializeApp(cfg);
+    const auth=firebase.auth();await auth.signInAnonymously();db=firebase.database();fbReady=true;
+    const ref=db.ref('players/'+playerId);await ref.set(playerData());ref.onDisconnect().remove();
+    db.ref('players').on('value',snap=>{players=snap.val()||{};drawMini();renderOthers()});
+    $('connection').textContent='Multiplayer conectado';$('dot').style.background='#65e0b2';
+    $('fbMessage').textContent='Conectado! Para testar, abra o site em outro celular ou navegador.';
+   }catch(e){$('fbMessage').textContent='Não foi possível conectar: '+e.message+'. Confira a configuração e as regras do Realtime Database.'}
+ }
+ function renderOthers(){
+   if(!mapReady)return;
+   Object.keys(window.otherMarkers||{}).forEach(id=>{if(!players[id]){window.otherMarkers[id].remove();delete window.otherMarkers[id]}});
+   window.otherMarkers=window.otherMarkers||{};
+   Object.values(players).forEach(p=>{
+    if(!p||p.id===playerId||typeof p.lng!=='number')return;
+    let marker=window.otherMarkers[p.id];
+    if(!marker){const el=document.createElement('div');el.style.cssText='font-size:25px;filter:drop-shadow(0 2px 3px #0008)';el.textContent=p.emoji||'🙂';marker=new maplibregl.Marker({element:el,anchor:'bottom'});window.otherMarkers[p.id]=marker}
+    marker.getElement().textContent=p.emoji||'🙂';marker.setLngLat([p.lng,p.lat]).addTo(map);
+   });
+ }
+ function loadScript(src){return new Promise((resolve,reject)=>{if(document.querySelector('script[src="'+src+'"]'))return resolve();const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>reject(new Error('falha ao carregar biblioteca Firebase'));document.head.appendChild(s)})}
+ setInterval(sendPosition,1500);
+})();
+</script>
+</body></html>
