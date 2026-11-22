@@ -237,7 +237,36 @@ function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':
 async function buyProperty(){const p=selected;if(!p)return;if(p.ownerUid){toast('Este imóvel já tem proprietário.');return}if(coins<p.price){toast('Saldo insuficiente para comprar este imóvel.');return}const data={ownerUid:uid,ownerName:appearance.name,purchasedAt:Date.now()};try{if(firebaseOn){const ref=db.ref('trindade/properties/'+p.id);const result=await ref.transaction(current=>{if(current&&current.ownerUid)return;return {...(current||{}),...data,type:p.type,price:p.price,x:p.x,z:p.z}});if(!result.committed){toast('Outro jogador comprou este imóvel primeiro.');return}}else{localStorage.setItem('trindade_properties',JSON.stringify(properties.map(q=>q.id===p.id?{...q,...data}:q)))}p.ownerUid=uid;p.ownerName=appearance.name;coins-=p.price;$('coins').textContent=coins.toLocaleString('pt-BR');$('propertyModal').classList.remove('open');renderProperties();toast('Parabéns! Imóvel registrado em nome de '+appearance.name+'.');}catch(e){toast('Não foi possível registrar a compra: '+e.message)}}
 function loadLocal(){try{let saved=JSON.parse(localStorage.getItem('trindade_properties')||'[]');saved.forEach(s=>{let p=properties.find(x=>x.id===s.id);if(p&&s.ownerUid){p.ownerUid=s.ownerUid;p.ownerName=s.ownerName;p.purchasedAt=s.purchasedAt}});let a=JSON.parse(localStorage.getItem('trindade_avatar')||'null');if(a){appearance={...appearance,...a};$('hudName').textContent=appearance.name;$('nameInput').value=appearance.name;}}catch(e){}}
 function syncPosition(){if(!firebaseOn||!db||Date.now()-lastNet<900)return;lastNet=Date.now();db.ref('trindade/players/'+uid).update({uid,name:appearance.name,x:player.position.x,z:player.position.z,updatedAt:Date.now()}).catch(()=>{})}
-async function connectFirebase(email,password){const cfg={apiKey:"AIzaSyAjiuxYJr2dq8e4SM9D3qkj2J1bvDUp8BE",authDomain:"trindade3d.firebaseapp.com",databaseURL:"https://trindade3d-default-rtdb.firebaseio.com",projectId:"trindade3d",storageBucket:"trindade3d.firebasestorage.app",messagingSenderId:"695673268409",appId:"1:695673268409:web:56a3f7306c71fe2ddad368"};try{await loadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js');await loadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js');await loadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js');if(!firebase.apps.length)firebase.initializeApp(cfg);const auth=firebase.auth();if(loginMode==='register'){await auth.createUserWithEmailAndPassword(email,password)}else{await auth.signInWithEmailAndPassword(email,password)}db=firebase.database();uid=auth.currentUser.uid;isAdmin=(uid===ADMIN_UID);firebaseOn=true;document.getElementById('buildBtn').style.display=isAdmin?'':'none';if(!isAdmin)setBuild(false);const ref=db.ref('trindade/properties');const snap=await ref.get();const remoteProps=snap.val()||{};properties.forEach(p=>{if(remoteProps[p.id]){p.ownerUid=remoteProps[p.id].ownerUid||null;p.ownerName=remoteProps[p.id].ownerName||null}});ref.on('value',s=>{const vals=s.val()||{};properties.forEach(p=>{if(vals[p.id]){p.ownerUid=vals[p.id].ownerUid||null;p.ownerName=vals[p.id].ownerName||null}else{p.ownerUid=null;p.ownerName=null}});renderProperties()});db.ref('trindade/players').on('value',s=>{$('online').textContent='🟢 '+Object.keys(s.val()||{}).length+' online'});db.ref('trindade/players/'+uid).onDisconnect().remove();$('fbStatus').textContent='Conectado!';db.ref('trindade/players/'+uid).update({uid,name:appearance.name,x:player.position.x,z:player.position.z,updatedAt:Date.now()});document.getElementById('loginScreen').style.display='none';toast('Login concluído!')}catch(e){document.getElementById('loginMsg').textContent=(e&&e.message)||'Não foi possível entrar. Tente novamente.';throw e}}
+async function connectFirebase(email,password){
+ const cfg={apiKey:"AIzaSyAjiuxYJr2dq8e4SM9D3qkj2J1bvDUp8BE",authDomain:"trindade3d.firebaseapp.com",databaseURL:"https://trindade3d-default-rtdb.firebaseio.com",projectId:"trindade3d",storageBucket:"trindade3d.firebasestorage.app",messagingSenderId:"695673268409",appId:"1:695673268409:web:56a3f7306c71fe2ddad368"};
+ const msg=document.getElementById('loginMsg');
+ try{
+  msg.textContent='Carregando Firebase...';
+  await loadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js');
+  await loadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js');
+  await loadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js');
+  if(!firebase.apps.length)firebase.initializeApp(cfg);
+  const auth=firebase.auth();
+  msg.textContent=loginMode==='register'?'Criando conta...':'Validando conta...';
+  if(loginMode==='register') await auth.createUserWithEmailAndPassword(email,password);
+  else await auth.signInWithEmailAndPassword(email,password);
+  uid=auth.currentUser.uid;isAdmin=(uid===ADMIN_UID);firebaseOn=true;db=firebase.database();
+  document.getElementById('buildBtn').style.display=isAdmin?'':'none';if(!isAdmin)setBuild(false);
+  // Libera a entrada no jogo após a autenticação; sincronização do banco é tentada em seguida.
+  document.getElementById('loginScreen').style.display='none';toast('Login concluído!');
+  $('fbStatus').textContent='Conta autenticada. Tentando sincronizar...';
+  const safeTimeout=(promise,ms,label)=>Promise.race([promise,new Promise((_,rej)=>setTimeout(()=>rej(new Error(label+' demorou demais')),ms))]);
+  try{
+   const ref=db.ref('trindade/properties');
+   const snap=await safeTimeout(ref.get(),10000,'Leitura dos imóveis');const remoteProps=snap.val()||{};
+   properties.forEach(p=>{if(remoteProps[p.id]){p.ownerUid=remoteProps[p.id].ownerUid||null;p.ownerName=remoteProps[p.id].ownerName||null}});
+   ref.on('value',s=>{const vals=s.val()||{};properties.forEach(p=>{if(vals[p.id]){p.ownerUid=vals[p.id].ownerUid||null;p.ownerName=vals[p.id].ownerName||null}else{p.ownerUid=null;p.ownerName=null}});renderProperties()});
+   db.ref('trindade/players').on('value',s=>{$('online').textContent='🟢 '+Object.keys(s.val()||{}).length+' online'});
+   const playerRef=db.ref('trindade/players/'+uid);playerRef.onDisconnect().remove();await safeTimeout(playerRef.update({uid,name:appearance.name,x:player.position.x,z:player.position.z,updatedAt:Date.now()}),10000,'Registro do jogador');
+   $('fbStatus').textContent='Conectado e sincronizando';
+  }catch(syncErr){$('fbStatus').textContent='Entrou, mas a sincronização falhou: '+(syncErr.message||syncErr);console.warn('Firebase sync:',syncErr)}
+ }catch(e){msg.textContent=(e&&e.message)||'Falha de conexão. Confira internet e configurações Firebase.';throw e}
+}
 
 function loadScript(src){return new Promise((res,rej)=>{let s=document.createElement('script');s.src=src;s.onload=()=>{clearTimeout(t);res()};s.onerror=()=>{clearTimeout(t);rej(Error('Falha ao carregar Firebase ('+src.split('/').slice(-2).join('/')+'). Verifique a internet.'))};let t=setTimeout(()=>{s.remove();rej(Error('Tempo esgotado ao carregar Firebase. Verifique internet ou bloqueio do navegador.'))},15000);document.head.appendChild(s)})}
 function open(id){$(id).classList.add('open')}document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$(b.dataset.close).classList.remove('open'));
