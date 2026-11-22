@@ -3,168 +3,173 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Trindade Online — Mundo 3D</title>
-<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<title>TRINDADE ONLINE — Cidade Aberta</title>
+<meta name="theme-color" content="#101c29">
 <style>
-:root{--bg:#101820;--panel:#17232d;--panel2:#20313e;--text:#f4f7fa;--muted:#a9bac7;--accent:#65e0b2;--gold:#ffd36a}
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:Inter,system-ui,Arial,sans-serif;background:var(--bg);color:var(--text)}
-#map{position:absolute;inset:0;background:#d9e5e8}
-.top{position:absolute;z-index:5;top:12px;left:12px;right:12px;display:flex;align-items:center;justify-content:space-between;gap:10px;pointer-events:none}
-.brand,.status,.panel,.mini-wrap,.controls{background:#14212ddd;border:1px solid #ffffff22;backdrop-filter:blur(12px);box-shadow:0 8px 30px #0003}
-.brand{padding:10px 14px;border-radius:16px;pointer-events:auto}.brand b{display:block;font-size:15px;letter-spacing:.2px}.brand small{color:var(--muted);font-size:11px}
-.status{padding:9px 12px;border-radius:14px;font-size:12px;color:var(--muted);pointer-events:auto}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#f0b44d;margin-right:6px}
-.panel{position:absolute;z-index:5;left:12px;top:88px;width:min(250px,calc(100vw - 24px));padding:13px;border-radius:18px}
-.panel h3{font-size:13px;margin:0 0 10px}.profile{display:flex;align-items:center;gap:10px;margin-bottom:12px}.avatar{width:42px;height:42px;border-radius:14px;background:#2b4555;display:grid;place-items:center;font-size:25px;border:1px solid #ffffff25}.profile input{width:100%;min-width:0}
-input,select,button{font:inherit}input,select{background:#0d1820;color:var(--text);border:1px solid #ffffff22;border-radius:10px;padding:9px;width:100%;outline:none}
-button{border:0;border-radius:11px;background:var(--accent);color:#10251f;font-weight:750;padding:10px 12px;cursor:pointer}
-button.secondary{background:#2b3d49;color:var(--text);border:1px solid #ffffff20}
-.actions{display:flex;gap:7px}.actions button{flex:1;font-size:12px}
-.hint{font-size:11px;color:var(--muted);line-height:1.45;margin:10px 0 0}
-.mini-wrap{position:absolute;z-index:5;right:12px;bottom:14px;width:154px;padding:8px;border-radius:16px}
-.mini-head{font-size:11px;font-weight:700;margin:0 0 6px;display:flex;justify-content:space-between}
-#mini{width:100%;height:116px;border-radius:10px;background:#263d49;display:block}
-.controls{position:absolute;z-index:5;left:50%;transform:translateX(-50%);bottom:14px;padding:8px;border-radius:16px;display:flex;gap:7px}
-.controls button{min-width:42px;padding:10px;background:#1e3440;color:white;border:1px solid #ffffff22}
-.controls button.active{background:var(--accent);color:#10251f}
-.notice{position:absolute;z-index:6;left:50%;transform:translateX(-50%);top:72px;background:#13232deF;border:1px solid #ffffff25;border-radius:12px;padding:9px 12px;font-size:12px;max-width:calc(100vw - 24px);text-align:center}
-.modal{position:absolute;z-index:10;inset:0;background:#071018bb;display:none;align-items:center;justify-content:center;padding:16px}
-.modal.open{display:flex}.dialog{width:min(440px,100%);background:#172630;border:1px solid #ffffff25;border-radius:20px;padding:18px;max-height:90vh;overflow:auto}
-.dialog h2{font-size:18px;margin:0 0 8px}.dialog p{color:var(--muted);font-size:13px;line-height:1.5}.dialog label{display:block;font-size:12px;color:var(--muted);margin:12px 0 5px}
-.dialog .row{display:flex;gap:8px}.dialog .row>*{flex:1}
-.emoji-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:7px;margin-top:8px}.emoji-grid button{font-size:22px;padding:8px;background:#263b48;color:white;border:1px solid #ffffff18}
-.emoji-grid button.selected{outline:2px solid var(--accent)}
-.maplibregl-ctrl-group{background:#172630!important}.maplibregl-ctrl button span{filter:invert(1)}
-@media(max-width:600px){.panel{top:78px;width:190px;padding:10px}.panel .hint{font-size:10px}.brand{padding:8px 10px}.brand b{font-size:13px}.status{font-size:10px;padding:8px}.mini-wrap{width:128px}.controls{bottom:150px}.notice{top:68px}}
+:root{--bg:#0b1420;--panel:#111f2d;--panel2:#1b2c3b;--line:#ffffff24;--txt:#f5f8fc;--muted:#a9bac8;--blue:#1685f8;--green:#54e0b0;--gold:#ffcb57}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#9cc9df;color:var(--txt);font-family:Inter,system-ui,Arial,sans-serif}button,input,select{font:inherit}button{border:0;border-radius:12px;padding:11px 14px;font-weight:800;background:var(--blue);color:white;cursor:pointer;touch-action:manipulation}button:active{transform:scale(.97)}button.secondary{background:#293d4e;border:1px solid var(--line)}button.green{background:#16a879}button.gold{background:#c98c19;color:#17120a}input,select{width:100%;padding:11px;border-radius:10px;border:1px solid var(--line);background:#0b1722;color:white;outline:none}
+#game{position:absolute;inset:0}canvas{display:block}
+.hud{position:absolute;z-index:5;pointer-events:none}.hud>*{pointer-events:auto}
+.brand{top:14px;left:14px;background:#0c1929eF;border:1px solid var(--line);border-radius:17px;padding:10px 15px;box-shadow:0 8px 28px #0004}.brand strong{font-size:17px;letter-spacing:.8px}.brand small{display:block;color:#b9c9d5;font-size:11px;margin-top:2px}
+.topright{top:14px;right:14px;display:flex;gap:8px;align-items:center}.pill{background:#0c1929eF;border:1px solid var(--line);border-radius:14px;padding:10px 13px;font-size:12px;font-weight:800;box-shadow:0 8px 28px #0003}
+.profile{top:88px;left:14px;width:260px;background:#0c1929eF;border:1px solid var(--line);border-radius:18px;padding:12px;box-shadow:0 10px 30px #0004}
+.profile-head{display:flex;align-items:center;gap:10px}.face{width:48px;height:48px;border-radius:14px;background:#29475e;display:grid;place-items:center;font-size:28px}.profile-name{font-weight:900}.sub{font-size:11px;color:var(--muted);margin-top:4px}.profile-actions{display:grid;gap:7px;margin-top:12px}.profile-actions button{width:100%;text-align:left}
+.help{right:14px;top:78px;width:210px;background:#0c1929dc;border:1px solid var(--line);border-radius:14px;padding:12px;font-size:12px;line-height:1.45}
+.minimap{right:14px;top:205px;width:164px;height:164px;border-radius:50%;border:4px solid #102337;background:#172c39;box-shadow:0 8px 28px #0006;overflow:hidden}
+#mini{width:100%;height:100%}
+.bottomnav{bottom:13px;left:50%;transform:translateX(-50%);display:flex;gap:6px;background:#0b1724eF;border:1px solid var(--line);border-radius:18px;padding:7px;box-shadow:0 8px 28px #0005}
+.bottomnav button{background:transparent;padding:10px 13px;font-size:12px;min-width:68px}.bottomnav button.active{background:#176ed0}
+.joy{position:absolute;z-index:6;left:18px;bottom:22px;width:132px;height:132px;border-radius:50%;background:#10233788;border:2px solid #ffffff50;display:none;touch-action:none}
+.joy:before{content:"";position:absolute;inset:14px;border:1px solid #ffffff30;border-radius:50%}
+.knob{position:absolute;width:52px;height:52px;left:38px;top:38px;border-radius:50%;background:#d9e9f5b8;border:2px solid white;box-shadow:0 3px 12px #0006;pointer-events:none}
+.run{position:absolute;z-index:6;right:20px;bottom:32px;width:68px;height:68px;border-radius:50%;background:#0c1c2dcc;border:1px solid #ffffff55;font-size:25px}
+.toast{position:absolute;z-index:20;left:50%;top:18px;transform:translateX(-50%);background:#0c1929ef;border:1px solid var(--line);padding:11px 16px;border-radius:13px;font-size:12px;display:none;max-width:90%;text-align:center}
+.modal{position:absolute;z-index:30;inset:0;background:#030a12b8;display:none;align-items:center;justify-content:center;padding:15px}.modal.open{display:flex}
+.dialog{width:min(470px,100%);max-height:90vh;overflow:auto;background:linear-gradient(145deg,#172a3b,#0d1926);border:1px solid #ffffff2b;border-radius:21px;padding:18px;box-shadow:0 18px 60px #0008}
+.dialog h2{margin:0 0 6px;font-size:20px}.dialog p{font-size:13px;color:var(--muted);line-height:1.5}.dialog label{display:block;font-size:12px;color:#c1d0dc;margin:12px 0 5px}.row{display:flex;gap:8px}.row>*{flex:1;min-width:0}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.property-card{background:#0a1723;border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:10px}.property-card b{display:block}.property-card small{color:var(--muted)}.swatches{display:flex;gap:8px;flex-wrap:wrap}.swatch{width:34px;height:34px;border-radius:50%;border:2px solid #ffffff70;padding:0}
+#propertyList{max-height:42vh;overflow:auto}
+@media(pointer:coarse){.joy{display:block}.profile{top:78px;width:205px;padding:9px}.profile-actions button{padding:9px;font-size:11px}.profile .sub{font-size:10px}.help{display:none}.minimap{top:auto;bottom:165px;width:112px;height:112px;right:10px}.bottomnav{bottom:10px;left:50%;width:max-content;max-width:96%;gap:0}.bottomnav button{min-width:0;padding:10px 9px;font-size:10px}.topright{top:12px}.topright .pill{padding:8px;font-size:10px}.brand{top:12px;left:10px;padding:8px 10px}.brand strong{font-size:13px}.brand small{font-size:9px}.run{display:block}}
+@media(pointer:fine){.run{display:none}}
 </style>
 </head>
 <body>
-<div id="map"></div>
-<div class="top">
-  <div class="brand"><b>🌆 TRINDADE ONLINE</b><small>Seu mundo • Trindade do Sul, RS</small></div>
-  <div class="status"><span class="dot" id="dot"></span><span id="connection">Modo demonstração</span></div>
+<div id="game"></div>
+<div class="hud brand"><strong>🏙️ TRINDADE ONLINE</strong><small>Trindade do Sul • Mundo aberto</small></div>
+<div class="hud topright"><div class="pill" id="online">🟢 1 online</div><div class="pill">🪙 <span id="coins">1.250</span></div><button class="secondary" id="settingsBtn">⚙</button></div>
+<div class="hud profile">
+ <div class="profile-head"><div class="face" id="facePreview">🧑</div><div><div class="profile-name" id="hudName">Visitante</div><div class="sub">⭐ Nível 1 • Cidadão</div></div></div>
+ <div class="profile-actions"><button id="customBtn">👕 Personalizar personagem</button><button class="secondary" id="myHomeBtn">🏠 Meus imóveis</button><button class="secondary" id="centerBtn">📍 Minha posição</button></div>
 </div>
-<div class="notice" id="notice">Toque no mapa para caminhar • Use WASD ou as setas do teclado</div>
-<div class="panel">
-  <div class="profile">
-    <div class="avatar" id="avatarFace">🧑</div>
-    <div style="min-width:0;flex:1"><input id="playerName" maxlength="18" value="Visitante" aria-label="Seu nome"><div style="font-size:10px;color:var(--muted);margin-top:4px">Seu personagem</div></div>
-  </div>
-  <div class="actions">
-    <button id="editBtn">Editar</button>
-    <button class="secondary" id="centerBtn">Minha posição</button>
-  </div>
-  <p class="hint">Caminhe clicando no mapa ou usando as teclas. O mini mapa mostra sua posição e, quando o multiplayer for configurado, os outros jogadores online.</p>
-  <button class="secondary" id="setupBtn" style="width:100%;margin-top:9px">Configurar multiplayer</button>
-</div>
-<div class="mini-wrap"><div class="mini-head"><span>MINI MAPA</span><span id="onlineCount">1 online</span></div><canvas id="mini" width="300" height="230"></canvas></div>
-<div class="controls">
-  <button id="up">▲</button><button id="left">◀</button><button id="down">▼</button><button id="right">▶</button>
-</div>
-<div class="modal" id="avatarModal"><div class="dialog">
-  <h2>Personalizar personagem</h2><p>Escolha o visual do seu avatar e o nome que os outros jogadores verão.</p>
-  <label>Nome</label><input id="editName" maxlength="18" placeholder="Seu nome">
-  <label>Personagem</label><div class="emoji-grid" id="emojiGrid"></div>
-  <div class="actions" style="margin-top:16px"><button class="secondary" data-close="avatarModal">Cancelar</button><button id="saveAvatar">Salvar personagem</button></div>
+<div class="hud help"><b>COMO JOGAR</b><br>WASD ou setas para andar. No celular, use o joystick. Aproxime-se de uma placa de imóvel e toque em comprar para adquirir uma casa ou terreno.</div>
+<div class="hud minimap"><canvas id="mini" width="220" height="220"></canvas></div>
+<div class="hud bottomnav"><button id="mapBtn">🗺️ Mapa</button><button id="propertiesBtn">🏘️ Imóveis</button><button id="customNav">👕 Roupas</button><button id="socialBtn">👥 Social</button></div>
+<div class="joy" id="joy"><div class="knob" id="knob"></div></div><button class="run" id="runBtn">🏃</button>
+<div class="toast" id="toast"></div>
+
+<div class="modal" id="propertyModal"><div class="dialog">
+ <h2 id="propTitle">Imóvel</h2><p id="propDesc">Detalhes do imóvel selecionado.</p>
+ <div class="property-card"><b id="propPrice">Preço</b><small id="propStatus">Disponível</small></div>
+ <div class="row" style="margin-top:14px"><button class="secondary" data-close="propertyModal">Fechar</button><button class="green" id="buyBtn">Comprar imóvel</button></div>
 </div></div>
-<div class="modal" id="setupModal"><div class="dialog">
-  <h2>Ativar multiplayer online</h2>
-  <p>O mapa e o personagem já funcionam em modo demonstração. Para que pessoas em celulares diferentes vejam umas às outras em tempo real, precisamos conectar um projeto Firebase gratuito. Crie um projeto no Firebase Console, ative <b>Authentication → Anonymous</b> e <b>Realtime Database</b>, e cole aqui a configuração do app Web.</p>
-  <label>Firebase apiKey</label><input id="fbApi" placeholder="AIza...">
-  <label>Firebase authDomain</label><input id="fbAuth" placeholder="seu-projeto.firebaseapp.com">
-  <label>Firebase databaseURL</label><input id="fbDb" placeholder="https://seu-projeto-default-rtdb.firebaseio.com">
-  <label>Firebase projectId</label><input id="fbProject" placeholder="seu-projeto">
-  <label>Firebase appId</label><input id="fbApp" placeholder="1:...:web:...">
-  <p style="font-size:11px">A configuração web não é uma senha. Não coloque aqui chaves privadas ou dados de cartão. O banco precisa de regras que exijam autenticação; instruções serão exibidas após salvar.</p>
-  <div class="actions"><button class="secondary" data-close="setupModal">Fechar</button><button id="connectFirebase">Conectar</button></div>
-  <p id="fbMessage" style="font-size:12px"></p>
+<div class="modal" id="propertiesModal"><div class="dialog"><h2>🏘️ Imóveis da cidade</h2><p>Veja casas e terrenos disponíveis. Os imóveis comprados ficam vinculados à conta do proprietário.</p><div id="propertyList"></div><button class="secondary" data-close="propertiesModal" style="width:100%;margin-top:14px">Fechar</button></div></div>
+<div class="modal" id="customModal"><div class="dialog">
+ <h2>Personalizar personagem</h2><p>Monte seu visual. As alterações aparecem no personagem dentro da cidade.</p>
+ <label>Nome do jogador</label><input id="nameInput" maxlength="20" value="Visitante">
+ <div class="grid2"><div><label>Tom de pele</label><select id="skin"><option value="#f1c49a">Claro</option><option value="#c98b61">Moreno</option><option value="#875438">Escuro</option></select></div><div><label>Cabelo</label><select id="hair"><option value="#171717">Preto</option><option value="#56351f">Castanho</option><option value="#c5a05a">Loiro</option><option value="#a72c24">Ruivo</option></select></div></div>
+ <label>Cor da roupa</label><div class="swatches" id="shirtColors"></div>
+ <label>Cor da calça</label><div class="swatches" id="pantsColors"></div>
+ <div class="row" style="margin-top:16px"><button class="secondary" data-close="customModal">Cancelar</button><button id="saveCustom">Salvar visual</button></div>
 </div></div>
-<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<div class="modal" id="settingsModal"><div class="dialog">
+ <h2>Conectar multiplayer</h2><p>Para salvar imóveis entre aparelhos e permitir que outros jogadores vejam suas compras, conecte o Firebase Realtime Database. Sem isso, o modo demonstração salva neste aparelho.</p>
+ <label>Firebase apiKey</label><input id="fbApi" placeholder="AIza..."><label>authDomain</label><input id="fbAuth" placeholder="projeto.firebaseapp.com"><label>databaseURL</label><input id="fbDb" placeholder="https://projeto-default-rtdb.firebaseio.com"><label>projectId</label><input id="fbProject" placeholder="nome-do-projeto"><label>appId</label><input id="fbApp" placeholder="1:...:web:...">
+ <p id="fbStatus">Modo demonstração ativo.</p><div class="row"><button class="secondary" data-close="settingsModal">Fechar</button><button id="connectBtn">Conectar</button></div>
+</div></div>
+<div class="modal" id="socialModal"><div class="dialog"><h2>👥 Comunidade</h2><p>O espaço social ficará disponível quando o multiplayer estiver conectado. Os jogadores conectados aparecerão no mundo e no contador online.</p><button class="secondary" data-close="socialModal" style="width:100%">Fechar</button></div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/three.min.js"></script>
 <script>
-(() => {
- const start=[-52.89942,-27.52156], emojis=['🧑','👩','🧔','👨‍🦰','👩‍🦱','🧑‍🚀','🧙','🦸','🧑‍🎤','👮','🧑‍🍳','🧑‍🎨'];
- let avatar='🧑', playerId='local-'+Math.random().toString(36).slice(2), players={}, db=null, fbReady=false, mapReady=false;
- let pos={lng:start[0],lat:start[1]}, lastSent=0, keys={};
- const $=id=>document.getElementById(id);
- const map=new maplibregl.Map({container:'map',style:'https://tiles.openfreemap.org/styles/liberty',center:start,zoom:16.3,pitch:55,bearing:-15,antialias:true, attributionControl:true});
- map.addControl(new maplibregl.NavigationControl({visualizePitch:true}),'bottom-right');
- map.on('load',()=>{
-   mapReady=true;
-   const layers=map.getStyle().layers||[];
-   let labelLayer=layers.find(l=>l.type==='symbol'&&l.layout&&l.layout['text-field']);
-   try{
-    map.addLayer({id:'3d-buildings',source:'openmaptiles', 'source-layer':'building',type:'fill-extrusion',
-      minzoom:14,paint:{'fill-extrusion-color':['case',['boolean',['feature-state','hover'],false],'#b8d8d0','#d6c9b6'],
-      'fill-extrusion-height':['coalesce',['get','render_height'],['get','height'],8],
-      'fill-extrusion-base':['coalesce',['get','render_min_height'],['get','min_height'],0],
-      'fill-extrusion-opacity':0.88}},labelLayer?labelLayer.id:undefined);
-   }catch(e){console.warn('Camada 3D indisponível',e)}
-   addLocalMarker(); drawMini(); setInterval(drawMini,900);
- });
- map.on('click',e=>moveTo(e.lngLat.lng,e.lngLat.lat));
- function addLocalMarker(){
-   const el=document.createElement('div');el.style.cssText='font-size:28px;filter:drop-shadow(0 2px 3px #0008);cursor:pointer';
-   el.textContent=avatar;
-   window.localMarker=new maplibregl.Marker({element:el,anchor:'bottom'}).setLngLat([pos.lng,pos.lat]).addTo(map);
+(()=>{'use strict';
+const $=id=>document.getElementById(id), toast=t=>{const el=$('toast');el.textContent=t;el.style.display='block';clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.style.display='none',2800)};
+const START={x:0,z:8};let scene,camera,renderer,clock,player,playerParts={},running=false,move={x:0,z:0},keys={},lastNet=0,db=null,uid='local-'+Math.random().toString(36).slice(2),firebaseOn=false,remote={},selected=null,coins=1250;
+let appearance={skin:'#f1c49a',hair:'#171717',shirt:'#171f2d',pants:'#222831',name:'Visitante'};
+const properties=[];
+function makeWorld(){
+ scene=new THREE.Scene();scene.background=new THREE.Color(0x9bc8df);scene.fog=new THREE.Fog(0x9bc8df,95,240);
+ camera=new THREE.PerspectiveCamera(58,innerWidth/innerHeight,.1,500);
+ renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;$('game').appendChild(renderer.domElement);
+ clock=new THREE.Clock();
+ scene.add(new THREE.HemisphereLight(0xd9efff,0x65705b,2.1));
+ const sun=new THREE.DirectionalLight(0xfff1d4,2.4);sun.position.set(-45,75,35);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-100;sun.shadow.camera.right=100;sun.shadow.camera.top=100;sun.shadow.camera.bottom=-100;scene.add(sun);
+ const ground=new THREE.Mesh(new THREE.PlaneGeometry(260,260),new THREE.MeshStandardMaterial({color:0x72945f,roughness:1}));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+ // Central roads and sidewalks
+ road(0,0,260,13);road(0,0,13,260);road(0,34,220,10);road(34,0,10,220);road(-38,-36,95,9);
+ sidewalk(0,8,260,2);sidewalk(0,-8,260,2);sidewalk(8,0,2,260);sidewalk(-8,0,2,260);
+ // City blocks, parks, plaza and town hall
+ plaza(-22,-20,34,28);building(-22,-29,18,8,7,0xe2d7c2,'PREFEITURA');building(25,-23,11,9,18,0xe7d9c5,'IGREJA');building(42,27,12,10,10,0xd7c4a6,'COMÉRCIO');
+ for(let i=0;i<18;i++){let x=(i%6)*19-48,z=Math.floor(i/6)*26+34;tree(x,z);tree(x+7,z+3)}
+ // Decorative residential streets and lots
+ let idx=1;
+ for(let z=-60;z<=60;z+=24)for(let x=-62;x<=62;x+=24){
+  if(Math.abs(x)<17||Math.abs(z)<17)continue;
+  const type=idx%3===0?'terreno':'casa', price=type==='casa'?850:420;
+  const p={id:'imovel-'+idx,type,price,x:x+5,z:z+5,ownerUid:null,ownerName:null};
+  properties.push(p);lot(p);idx++;
  }
- function refreshLocal(){if(window.localMarker){window.localMarker.getElement().textContent=avatar;window.localMarker.setLngLat([pos.lng,pos.lat])}}
- function moveTo(lng,lat){pos={lng,lat};refreshLocal();sendPosition();drawMini()}
- function walk(dx,dy){if(!mapReady)return;const c=map.project([pos.lng,pos.lat]);const p=map.unproject([c.x+dx,c.y+dy]);moveTo(p.lng,p.lat);map.easeTo({center:[pos.lng,pos.lat],duration:180})}
- document.addEventListener('keydown',e=>{const k=e.key.toLowerCase();if(['arrowup','arrowdown','arrowleft','arrowright','w','a','s','d'].includes(k)){e.preventDefault();keys[k]=true}});
- document.addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
- setInterval(()=>{if(keys.w||keys.arrowup)walk(0,-9);if(keys.s||keys.arrowdown)walk(0,9);if(keys.a||keys.arrowleft)walk(-9,0);if(keys.d||keys.arrowright)walk(9,0)},110);
- [['up',0,-18],['down',0,18],['left',-18,0],['right',18,0]].forEach(([id,x,y])=>$(id).addEventListener('click',()=>walk(x,y)));
- $('centerBtn').onclick=()=>map.flyTo({center:[pos.lng,pos.lat],zoom:17.5,pitch:60});
- $('playerName').onchange=()=>sendPosition();
- $('editBtn').onclick=()=>{$('editName').value=$('playerName').value;$('avatarModal').classList.add('open')};
- $('setupBtn').onclick=()=>$('setupModal').classList.add('open');
- document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$ (b.dataset.close).classList.remove('open'));
- emojis.forEach(e=>{const b=document.createElement('button');b.textContent=e;b.onclick=()=>{avatar=e;document.querySelectorAll('.emoji-grid button').forEach(x=>x.classList.remove('selected'));b.classList.add('selected')};if(e===avatar)b.classList.add('selected');$('emojiGrid').appendChild(b)});
- $('saveAvatar').onclick=()=>{$('playerName').value=$('editName').value.trim()||'Visitante';$('avatarFace').textContent=avatar;if(window.localMarker)refreshLocal();$('avatarModal').classList.remove('open');sendPosition()};
- function drawMini(){
-   const c=$('mini'),ctx=c.getContext('2d'),w=c.width,h=c.height;ctx.clearRect(0,0,w,h);ctx.fillStyle='#29434d';ctx.fillRect(0,0,w,h);
-   ctx.strokeStyle='#607a83';ctx.lineWidth=13;ctx.lineCap='round';
-   for(let i=0;i<5;i++){ctx.beginPath();ctx.moveTo(i*85-30,0);ctx.lineTo(i*85+60,h);ctx.stroke()}
-   ctx.strokeStyle='#b5c5bd';ctx.lineWidth=2;ctx.strokeRect(4,4,w-8,h-8);
-   const others=Object.values(players).filter(p=>p&&p.id!==playerId);
-   const all=[{...pos,emoji:avatar,local:true},...others];
-   all.forEach(p=>{let dx=(p.lng-pos.lng)*650000,dy=(pos.lat-p.lat)*650000;let x=w/2+dx,y=h/2+dy;if(x<8||x>w-8||y<8||y>h-8)return;ctx.beginPath();ctx.fillStyle=p.local?'#65e0b2':'#ffd36a';ctx.arc(x,y,p.local?8:7,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#10202a';ctx.lineWidth=2;ctx.stroke()});
-   $('onlineCount').textContent=(1+others.length)+' online';
- }
- function playerData(){return {id:playerId,name:$('playerName').value.trim()||'Visitante',emoji:avatar,lng:pos.lng,lat:pos.lat,updatedAt:Date.now()}}
- async function sendPosition(){
-   if(!db||!fbReady)return;
-   const now=Date.now();if(now-lastSent<250)return;lastSent=now;
-   try{await db.ref('players/'+playerId).update(playerData())}catch(e){console.warn(e)}
- }
- async function connectFirebase(){
-   const cfg={apiKey:$('fbApi').value.trim(),authDomain:$('fbAuth').value.trim(),databaseURL:$('fbDb').value.trim(),projectId:$('fbProject').value.trim(),appId:$('fbApp').value.trim()};
-   if(Object.values(cfg).some(v=>!v)){$('fbMessage').textContent='Preencha todos os campos.';return}
-   $('fbMessage').textContent='Conectando...';
-   try{
-    await loadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js');
-    await loadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js');
-    await loadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js');
-    if(!firebase.apps.length)firebase.initializeApp(cfg);
-    const auth=firebase.auth();await auth.signInAnonymously();db=firebase.database();fbReady=true;
-    const ref=db.ref('players/'+playerId);await ref.set(playerData());ref.onDisconnect().remove();
-    db.ref('players').on('value',snap=>{players=snap.val()||{};drawMini();renderOthers()});
-    $('connection').textContent='Multiplayer conectado';$('dot').style.background='#65e0b2';
-    $('fbMessage').textContent='Conectado! Para testar, abra o site em outro celular ou navegador.';
-   }catch(e){$('fbMessage').textContent='Não foi possível conectar: '+e.message+'. Confira a configuração e as regras do Realtime Database.'}
- }
- function renderOthers(){
-   if(!mapReady)return;
-   Object.keys(window.otherMarkers||{}).forEach(id=>{if(!players[id]){window.otherMarkers[id].remove();delete window.otherMarkers[id]}});
-   window.otherMarkers=window.otherMarkers||{};
-   Object.values(players).forEach(p=>{
-    if(!p||p.id===playerId||typeof p.lng!=='number')return;
-    let marker=window.otherMarkers[p.id];
-    if(!marker){const el=document.createElement('div');el.style.cssText='font-size:25px;filter:drop-shadow(0 2px 3px #0008)';el.textContent=p.emoji||'🙂';marker=new maplibregl.Marker({element:el,anchor:'bottom'});window.otherMarkers[p.id]=marker}
-    marker.getElement().textContent=p.emoji||'🙂';marker.setLngLat([p.lng,p.lat]).addTo(map);
-   });
- }
- function loadScript(src){return new Promise((resolve,reject)=>{if(document.querySelector('script[src="'+src+'"]'))return resolve();const s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=()=>reject(new Error('falha ao carregar biblioteca Firebase'));document.head.appendChild(s)})}
- setInterval(sendPosition,1500);
+ // Trees, street lamps, road markings
+ for(let z=-110;z<=110;z+=22){lamp(10,z);lamp(-10,z)}
+ for(let i=-120;i<=120;i+=12){dash(i,0)}
+ createPlayer();camera.position.set(0,7,15);camera.lookAt(0,1,0);
+}
+function mat(color,roughness=.85){return new THREE.MeshStandardMaterial({color,roughness})}
+function box(x,y,z,w,h,d,color,opts={}){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(color));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;scene.add(m);return m}
+function road(x,z,w,d){box(x,.025,z,w,.05,d,0x343b40)}
+function sidewalk(x,z,w,d){box(x,.08,z,w,.16,d,0xb9b5a8)}
+function plaza(x,z,w,d){box(x,.12,z,w,.24,d,0xc5bba7);for(let i=0;i<8;i++)tree(x-w/2+3+i*4,z-d/2+2)}
+function building(x,z,w,d,h,color,label){box(x,h/2,z,w,h,d,color);box(x,h+.12,z,w+.5,.25,d+.5,0x5a6470);for(let xx=x-w/2+1.5;xx<x+w/2-1;xx+=3){box(xx,h*.5,z-d/2-.04,1.1,2,.12,0x5b8a9a)}if(label){const sign=box(x,h-1,z-d/2-.12,Math.min(w-1,8),.8,.15,0x283b4b)}}
+function tree(x,z){const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.18,.25,2,7),mat(0x765033));trunk.position.set(x,1,z);scene.add(trunk);const crown=new THREE.Mesh(new THREE.SphereGeometry(1.55,9,7),mat(0x36784a));crown.position.set(x,3,z);crown.castShadow=true;scene.add(crown)}
+function lamp(x,z){const pole=new THREE.Mesh(new THREE.CylinderGeometry(.07,.09,4,8),mat(0x3a4147));pole.position.set(x,2,z);scene.add(pole);const light=new THREE.Mesh(new THREE.SphereGeometry(.25,8,8),new THREE.MeshBasicMaterial({color:0xffedb0}));light.position.set(x,4.1,z);scene.add(light)}
+function dash(x,z){box(x,.06,z,3,.04,.14,0xf3d16a)}
+function lot(p){
+ const pad=box(p.x,.14,p.z,13,.25,13,p.type==='casa'?0xa8a18d:0x8a9d71);
+ p.mesh=pad;
+ if(p.type==='casa'){
+  box(p.x,.9,p.z,7,1.5,6,0xe0d3bd);const roof=new THREE.Mesh(new THREE.ConeGeometry(5.3,2.5,4),mat(0x914b3c));roof.rotation.y=Math.PI/4;roof.position.set(p.x,2.8,p.z);roof.castShadow=true;scene.add(roof);
+  box(p.x,1,p.z-3.06,1.2,2,.12,0x64452f);box(p.x-2,1,p.z-3.13,1.1,1,.1,0x78a8b6);box(p.x+2,1,p.z-3.13,1.1,1,.1,0x78a8b6);
+ }else{for(let i=0;i<4;i++)tree(p.x-4+i*2.6,p.z-4)}
+ const sign=box(p.x,1.15,p.z+6.8,3.2,1.3,.25,0x17344a);p.sign=sign;
+ const marker=new THREE.Mesh(new THREE.SphereGeometry(.32,12,10),new THREE.MeshBasicMaterial({color:0x55e6b6}));marker.position.set(p.x,2.1,p.z+6.8);scene.add(marker);p.marker=marker;
+}
+function makeHumanoid(){
+ const g=new THREE.Group();const parts={};
+ const sphere=(name,x,y,z,sx,sy,sz,color)=>{let m=new THREE.Mesh(new THREE.SphereGeometry(1,16,12),mat(color));m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.castShadow=true;g.add(m);parts[name]=m;return m};
+ const limb=(name,x,y,z,r1,r2,len,color)=>{let m=new THREE.Mesh(new THREE.CapsuleGeometry(r1,len,4,8),mat(color));m.position.set(x,y,z);m.castShadow=true;g.add(m);parts[name]=m;return m};
+ sphere('torso',0,1.35,0,.42,.58,.24,appearance.shirt);sphere('head',0,2.18,0,.27,.33,.27,appearance.skin);
+ sphere('hair',0,2.43,-.015,.28,.16,.28,appearance.hair);
+ sphere('nose',0,2.16,.255,.045,.06,.05,appearance.skin);
+ limb('armL',-.52,1.37,0,.13,.13,.55,appearance.shirt);limb('armR',.52,1.37,0,.13,.13,.55,appearance.shirt);
+ sphere('handL',-.52,1.02,.02,.12,.13,.12,appearance.skin);sphere('handR',.52,1.02,.02,.12,.13,.12,appearance.skin);
+ limb('legL',-.2,.55,0,.15,.15,.62,appearance.pants);limb('legR',.2,.55,0,.15,.15,.62,appearance.pants);
+ sphere('footL',-.2,.12,.12,.16,.11,.28,0xe9edf0);sphere('footR',.2,.12,.12,.16,.11,.28,0xe9edf0);
+ g.position.set(START.x,0,START.z);scene.add(g);return {group:g,parts};
+}
+function createPlayer(){const o=makeHumanoid();player=o.group;playerParts=o.parts}
+function refreshAvatar(){if(!player)return;scene.remove(player);const o=makeHumanoid();player=o.group;playerParts=o.parts;$('facePreview').textContent='🧑';}
+function animate(){
+ requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.04);
+ let x=move.x,z=move.z;const speed=running?8:4.4;
+ const len=Math.hypot(x,z);if(len>.08){x/=Math.max(1,len);z/=Math.max(1,len);player.position.x+=x*speed*dt;player.position.z+=z*speed*dt;player.rotation.y=Math.atan2(x,z);const t=clock.elapsedTime*9*(running?1.35:1);playerParts.legL.rotation.x=Math.sin(t)*.55;playerParts.legR.rotation.x=-Math.sin(t)*.55;playerParts.armL.rotation.x=-Math.sin(t)*.35;playerParts.armR.rotation.x=Math.sin(t)*.35;}else{['legL','legR','armL','armR'].forEach(k=>playerParts[k].rotation.x*=.75)}
+ camera.position.lerp(new THREE.Vector3(player.position.x,player.position.y+6.3,player.position.z+10.5),.09);camera.lookAt(player.position.x,1.2,player.position.z);
+ properties.forEach(p=>{if(p.marker)p.marker.material.color.set(p.ownerUid?'#e4a43c':'#55e6b6')});
+ renderer.render(scene,camera);drawMini();checkNearby();syncPosition();
+}
+function drawMini(){const c=$('mini'),ctx=c.getContext('2d'),w=c.width,h=c.height;ctx.clearRect(0,0,w,h);ctx.fillStyle='#273f3b';ctx.fillRect(0,0,w,h);ctx.strokeStyle='#8b9692';ctx.lineWidth=13;for(let i=0;i<5;i++){ctx.beginPath();ctx.moveTo(i*60-20,0);ctx.lineTo(i*60+40,h);ctx.stroke()}ctx.fillStyle='#f5f7fa';ctx.beginPath();ctx.arc(w/2,h/2,7,0,7);ctx.fill();ctx.fillStyle='#f0b34b';properties.filter(p=>p.ownerUid).forEach(p=>{let xx=w/2+(p.x-player.position.x)*1.15,yy=h/2+(p.z-player.position.z)*1.15;if(xx>0&&xx<w&&yy>0&&yy<h){ctx.beginPath();ctx.arc(xx,yy,3,0,7);ctx.fill()}})}
+function checkNearby(){let near=null,dist=999;properties.forEach(p=>{let d=Math.hypot(p.x-player.position.x,p.z-player.position.z);if(d<9&&d<dist){near=p;dist=d}});if(near&&near!==selected){selected=near;toast((near.ownerUid?'Imóvel de '+near.ownerName:'Imóvel disponível')+' • toque em comprar/inspecionar');showProperty(near,false)}}
+function showProperty(p,open=true){selected=p;$('propTitle').textContent=(p.type==='casa'?'🏠 Casa':'🌳 Terreno')+' • '+p.id;$('propDesc').textContent=p.type==='casa'?'Casa residencial em bairro da cidade.':'Terreno disponível para construir sua própria casa.';$('propPrice').textContent='🪙 '+p.price.toLocaleString('pt-BR')+' STACOINS';$('propStatus').textContent=p.ownerUid?'Proprietário: '+p.ownerName:'Disponível para compra';$('buyBtn').textContent=p.ownerUid?(p.ownerUid===uid?'Seu imóvel':'Já possui proprietário'):'Comprar agora';$('buyBtn').disabled=!!p.ownerUid;$('buyBtn').style.opacity=p.ownerUid?.55:1;if(open)$('propertyModal').classList.add('open')}
+function renderProperties(){const box=$('propertyList');box.innerHTML='';properties.forEach(p=>{const d=document.createElement('div');d.className='property-card';d.innerHTML=`<b>${p.type==='casa'?'🏠 Casa':'🌳 Terreno'} — ${p.id}</b><small>${p.ownerUid?'Proprietário: '+escapeHtml(p.ownerName||'Jogador'):'Disponível'} • ${p.price} STACOINS</small><div style="margin-top:8px"><button class="${p.ownerUid?'secondary':'green'}" ${p.ownerUid?'disabled':''} data-id="${p.id}">${p.ownerUid?'Ocupado':'Ver imóvel'}</button></div>`;box.appendChild(d)});box.querySelectorAll('button[data-id]').forEach(b=>b.onclick=()=>{let p=properties.find(x=>x.id===b.dataset.id);if(p){player.position.set(p.x,0,p.z+10);$('propertiesModal').classList.remove('open');showProperty(p)}})}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+async function buyProperty(){const p=selected;if(!p)return;if(p.ownerUid){toast('Este imóvel já tem proprietário.');return}if(coins<p.price){toast('Saldo insuficiente para comprar este imóvel.');return}const data={ownerUid:uid,ownerName:appearance.name,purchasedAt:Date.now()};try{if(firebaseOn){const ref=db.ref('trindade/properties/'+p.id);const result=await ref.transaction(current=>{if(current&&current.ownerUid)return;return {...(current||{}),...data,type:p.type,price:p.price,x:p.x,z:p.z}});if(!result.committed){toast('Outro jogador comprou este imóvel primeiro.');return}}else{localStorage.setItem('trindade_properties',JSON.stringify(properties.map(q=>q.id===p.id?{...q,...data}:q)))}p.ownerUid=uid;p.ownerName=appearance.name;coins-=p.price;$('coins').textContent=coins.toLocaleString('pt-BR');$('propertyModal').classList.remove('open');renderProperties();toast('Parabéns! Imóvel registrado em nome de '+appearance.name+'.');}catch(e){toast('Não foi possível registrar a compra: '+e.message)}}
+function loadLocal(){try{let saved=JSON.parse(localStorage.getItem('trindade_properties')||'[]');saved.forEach(s=>{let p=properties.find(x=>x.id===s.id);if(p&&s.ownerUid){p.ownerUid=s.ownerUid;p.ownerName=s.ownerName;p.purchasedAt=s.purchasedAt}});let a=JSON.parse(localStorage.getItem('trindade_avatar')||'null');if(a){appearance={...appearance,...a};$('hudName').textContent=appearance.name;$('nameInput').value=appearance.name;}}catch(e){}}
+function syncPosition(){if(!firebaseOn||!db||Date.now()-lastNet<900)return;lastNet=Date.now();db.ref('trindade/players/'+uid).update({uid,name:appearance.name,x:player.position.x,z:player.position.z,updatedAt:Date.now()}).catch(()=>{})}
+async function connectFirebase(){const cfg={apiKey:$('fbApi').value.trim(),authDomain:$('fbAuth').value.trim(),databaseURL:$('fbDb').value.trim(),projectId:$('fbProject').value.trim(),appId:$('fbApp').value.trim()};if(Object.values(cfg).some(v=>!v)){ $('fbStatus').textContent='Preencha todos os campos.';return} $('fbStatus').textContent='Conectando...';try{await loadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js');await loadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js');await loadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js');if(!firebase.apps.length)firebase.initializeApp(cfg);await firebase.auth().signInAnonymously();db=firebase.database();uid=firebase.auth().currentUser.uid;firebaseOn=true;const ref=db.ref('trindade/properties');const snap=await ref.get();const remoteProps=snap.val()||{};properties.forEach(p=>{if(remoteProps[p.id]){p.ownerUid=remoteProps[p.id].ownerUid||null;p.ownerName=remoteProps[p.id].ownerName||null}});ref.on('value',s=>{const vals=s.val()||{};properties.forEach(p=>{if(vals[p.id]){p.ownerUid=vals[p.id].ownerUid||null;p.ownerName=vals[p.id].ownerName||null}else{p.ownerUid=null;p.ownerName=null}});renderProperties()});db.ref('trindade/players').on('value',s=>{const v=s.val()||{};$('online').textContent='🟢 '+Object.keys(v).length+' online'});db.ref('trindade/players/'+uid).onDisconnect().remove();$('fbStatus').textContent='Conectado! Imóveis e jogadores sincronizados.';toast('Multiplayer conectado!')}catch(e){$('fbStatus').textContent='Erro: '+e.message}}
+function loadScript(src){return new Promise((res,rej)=>{let s=document.createElement('script');s.src=src;s.onload=res;s.onerror=()=>rej(Error('Falha ao carregar Firebase'));document.head.appendChild(s)})}
+function open(id){$(id).classList.add('open')}document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$(b.dataset.close).classList.remove('open'));
+$('buyBtn').onclick=buyProperty;$('propertiesBtn').onclick=()=>{renderProperties();open('propertiesModal')};$('myHomeBtn').onclick=()=>{renderProperties();$('propertyList').querySelectorAll('.property-card').forEach((el,i)=>{if(properties[i].ownerUid!==uid)el.style.display='none'});open('propertiesModal')};
+$('customBtn').onclick=$('customNav').onclick=()=>{ $('nameInput').value=appearance.name;open('customModal')};
+$('settingsBtn').onclick=()=>open('settingsModal');$('connectBtn').onclick=connectFirebase;$('socialBtn').onclick=()=>open('socialModal');$('centerBtn').onclick=()=>{camera.position.set(player.position.x,player.position.y+6,player.position.z+10);camera.lookAt(player.position)};
+$('mapBtn').onclick=()=>toast('Você está explorando Trindade do Sul. Os marcadores verdes indicam imóveis livres.');
+$('saveCustom').onclick=()=>{appearance.name=$('nameInput').value.trim()||'Visitante';appearance.skin=$('skin').value;appearance.hair=$('hair').value;localStorage.setItem('trindade_avatar',JSON.stringify(appearance));$('hudName').textContent=appearance.name;refreshAvatar();$('customModal').classList.remove('open');toast('Personagem atualizado!')};
+function colorPicker(id,key,colors){const el=$(id);colors.forEach(c=>{let b=document.createElement('button');b.className='swatch';b.style.background=c;b.onclick=()=>{appearance[key]=c;el.querySelectorAll('button').forEach(x=>x.style.outline='');b.style.outline='3px solid white'};el.appendChild(b)})}
+colorPicker('shirtColors','shirt',['#151d2b','#1764b0','#b52b2b','#16835c','#e0e2e5','#e5a12c','#6d43a8']);colorPicker('pantsColors','pants',['#17191e','#283e59','#55585e','#9a9a92','#5a382b']);
+$('runBtn').onpointerdown=()=>running=true;$('runBtn').onpointerup=$('runBtn').onpointercancel=()=>running=false;
+document.addEventListener('keydown',e=>{let k=e.key.toLowerCase();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright','shift'].includes(k)){keys[k]=true;if(k==='shift')running=true}});document.addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;if(e.key==='Shift')running=false});
+function updateKeys(){move.x=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0);move.z=(keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0)}
+const joy=$('joy'),knob=$('knob');let joyId=null;function joyMove(e){const r=joy.getBoundingClientRect(),dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2),max=40,len=Math.hypot(dx,dy),x=len>max?dx/len*max:dx,z=len>max?dy/len*max:dy;knob.style.transform=`translate(${x}px,${z}px)`;move.x=x/max;move.z=z/max}
+joy.onpointerdown=e=>{joyId=e.pointerId;joy.setPointerCapture(e.pointerId);joyMove(e)};joy.onpointermove=e=>{if(e.pointerId===joyId)joyMove(e)};function joyEnd(){joyId=null;knob.style.transform='translate(0,0)';move.x=0;move.z=0}joy.onpointerup=joy.onpointercancel=joyEnd;
+setInterval(updateKeys,40);
+addEventListener('resize',()=>{if(!renderer)return;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+makeWorld();loadLocal();renderProperties();animate();
 })();
 </script>
-</body></html>
+</body>
+</html>
