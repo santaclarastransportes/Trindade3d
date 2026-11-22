@@ -138,28 +138,61 @@ const properties=[];const remoteHumans={};let remoteBuildIds=new Set();
 let groundMesh,sunLight,buildMode=false,curGroup=null,oidN=0;const worldGroups=[];let isAdmin=false;const ADMIN_UID='bsaez769YeMzZpKDEfPm4vSBcOp2';
 const add=o=>(curGroup||scene).add(o);
 function makeWorld(){
- scene=new THREE.Scene();scene.background=new THREE.Color(0x9bc8df);scene.fog=new THREE.Fog(0x9bc8df,160,560);
- camera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,.1,1000);
- try{renderer=new THREE.WebGLRenderer({antialias:!isTouch,powerPreference:'high-performance'});}catch(err){throw new Error('Seu navegador não conseguiu iniciar o WebGL: '+err.message)}
- renderer.setPixelRatio(Math.min(devicePixelRatio,isTouch?1.5:2));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=isTouch?THREE.PCFShadowMap:THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;$('game').appendChild(renderer.domElement);
- clock=new THREE.Clock();
- add(new THREE.HemisphereLight(0xd9efff,0x65705b,2.1));
- const sun=new THREE.DirectionalLight(0xfff1d4,2.4);sun.position.set(-45,75,35);sun.castShadow=true;const sm=isTouch?1024:2048;sun.shadow.mapSize.set(sm,sm);sun.shadow.camera.left=-100;sun.shadow.camera.right=100;sun.shadow.camera.top=100;sun.shadow.camera.bottom=-100;add(sun);add(sun.target);sunLight=sun;
- const ground=new THREE.Mesh(new THREE.PlaneGeometry(4000,4000),new THREE.MeshStandardMaterial({color:0x72945f,roughness:1}));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;add(ground);groundMesh=ground;
- road(0,0,260,13);road(0,0,13,260);road(0,34,220,10);road(34,0,10,220);road(-38,-36,95,9);
- sidewalk(0,8,260,2);sidewalk(0,-8,260,2);sidewalk(8,0,2,260);sidewalk(-8,0,2,260);
- plaza(-22,-20,34,28);building(-22,-29,18,8,7,0xe2d7c2,'PREFEITURA');building(25,-23,11,9,18,0xe7d9c5,'IGREJA');building(42,27,12,10,10,0xd7c4a6,'COMÉRCIO');
- for(let i=0;i<18;i++){let x=(i%6)*19-48,z=Math.floor(i/6)*26+34;tree(x,z);tree(x+7,z+3)}
- let idx=1;
- for(let z=-60;z<=60;z+=24)for(let x=-62;x<=62;x+=24){
-  if(Math.abs(x)<17||Math.abs(z)<17)continue;
-  const type=idx%3===0?'terreno':'casa', price=type==='casa'?850:420;
-  const p={id:'imovel-'+idx,type,price,x:x+5,z:z+5,ownerUid:null,ownerName:null};
-  properties.push(p);lot(p);worldGroups[worldGroups.length-1].userData.prop=p;idx++;
- }
- for(let z=-110;z<=110;z+=22){lamp(10,z);lamp(-10,z)}
- for(let i=-120;i<=120;i+=12){dash(i,0)}
- createPlayer();updateCamera(1);
+  scene=new THREE.Scene();scene.background=new THREE.Color(0xdaf3e5);scene.fog=new THREE.Fog(0xdaf3e5,260,760);
+  camera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,.1,1000);
+  try{renderer=new THREE.WebGLRenderer({antialias:!isTouch,powerPreference:'high-performance'});}catch(err){throw new Error('Seu navegador não conseguiu iniciar o WebGL: '+err.message)}
+  renderer.setPixelRatio(Math.min(devicePixelRatio,isTouch?1.5:2));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=isTouch?THREE.PCFShadowMap:THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;$('game').appendChild(renderer.domElement);
+  clock=new THREE.Clock();
+  add(new THREE.HemisphereLight(0xe9f5ff,0x77796f,2.0));
+  const sun=new THREE.DirectionalLight(0xffffff,2.0);sun.position.set(-45,75,35);sun.castShadow=true;const sm=isTouch?1024:2048;sun.shadow.mapSize.set(sm,sm);sun.shadow.camera.left=-100;sun.shadow.camera.right=100;sun.shadow.camera.top=100;sun.shadow.camera.bottom=-100;add(sun);add(sun.target);sunLight=sun;
+  const ground=new THREE.Mesh(new THREE.PlaneGeometry(4000,4000),new THREE.MeshStandardMaterial({color:0xbcebd2,roughness:1}));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;add(ground);groundMesh=ground;
+  const city=new THREE.Mesh(new THREE.PlaneGeometry(220,285),new THREE.MeshStandardMaterial({color:0xf0eff2,roughness:1}));
+  city.rotation.x=-Math.PI/2;city.position.set(0,.012,0);city.receiveShadow=true;add(city);
+  function street(points,width=2.05){
+    for(let i=0;i<points.length-1;i++){
+      const a=points[i],b=points[i+1],dx=b[0]-a[0],dz=b[1]-a[1],len=Math.hypot(dx,dz);
+      const m=new THREE.Mesh(new THREE.BoxGeometry(width,.07,len),new THREE.MeshStandardMaterial({color:0xc5cbd1,roughness:1}));
+      m.position.set((a[0]+b[0])/2,.055,(a[1]+b[1])/2);m.rotation.y=Math.atan2(dx,dz);m.receiveShadow=true;add(m);
+    }
+    points.forEach(p=>{const j=new THREE.Mesh(new THREE.CylinderGeometry(width/2,width/2,.07,12),new THREE.MeshStandardMaterial({color:0xc5cbd1,roughness:1}));j.position.set(p[0],.055,p[1]);add(j)});
+  }
+  const P=(x,y)=>[(x-540)*.205,(y-695)*.205];
+  const paths=[
+   [[360,-20],[300,95],[220,220],[140,355],[55,465],[-25,520]],
+   [[-20,700],[80,735],[160,820],[230,925],[300,1035],[370,1180],[455,1395]],
+   [[-20,590],[115,565],[250,545],[385,525],[525,510],[680,525],[820,555],[980,515],[1100,535]],
+   [[130,0],[220,120],[280,240],[315,365],[350,485],[390,610],[430,735]],
+   [[460,-10],[410,120],[380,245],[400,370],[430,500],[470,630]],
+   [[-10,465],[115,450],[230,430],[350,405],[470,390],[600,410],[730,450]],
+   [[120,245],[210,275],[300,300],[390,325],[490,350],[600,370]],
+   [[235,120],[270,230],[300,345],[330,455],[360,570],[390,690]],
+   [[430,245],[470,330],[520,420],[585,510],[655,575]],
+   [[150,485],[210,540],[265,600],[315,675],[355,755]],
+   [[255,600],[300,680],[345,765],[395,850],[450,930]],
+   [[320,710],[430,735],[550,750],[670,765]],
+   [[270,800],[350,850],[430,900],[530,930],[650,950]],
+   [[350,920],[420,990],[500,1060],[600,1100]],
+   [[440,1040],[510,1110],[580,1190],[650,1270]],
+   [[510,1220],[600,1190],[700,1170],[800,1160],[900,1180]],
+   [[590,1060],[700,1030],[810,1020],[920,1040]],
+   [[680,900],[780,880],[880,900],[990,940]],
+   [[680,680],[780,700],[900,735],[1030,790]],
+   [[690,430],[790,430],[900,450],[1010,480]],
+   [[690,300],[780,315],[875,350],[970,380]],
+   [[780,200],[860,225],[950,250],[1080,265]],
+   [[850,0],[835,110],[830,220],[850,320]],
+   [[950,0],[930,110],[930,220],[960,300]],
+   [[1000,300],[1000,420],[1020,540],[1050,650]],
+   [[100,760],[170,850],[220,950],[250,1070]],
+   [[180,900],[260,940],[350,970],[450,1000]],
+   [[250,1080],[340,1100],[430,1130],[520,1160]],
+   [[370,1180],[460,1200],[550,1230],[650,1260]],
+   [[500,1300],[600,1320],[700,1350],[800,1390]]
+  ];
+  paths.forEach(path=>street(path.map(([x,y])=>P(x,y)),1.65));
+  street([[360,-20],[300,95],[220,220],[140,355],[55,465],[-25,520]].map(([x,y])=>P(x,y)),3.7);
+  street([[-20,700],[80,735],[160,820],[230,925],[300,1035],[370,1180],[455,1395]].map(([x,y])=>P(x,y)),3.7);
+  createPlayer();updateCamera(1);
 }
 function mat(color,roughness=.85){return new THREE.MeshStandardMaterial({color,roughness})}
 function box(x,y,z,w,h,d,color,opts={}){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(color));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;add(m);return m}
@@ -271,7 +304,7 @@ async function connectFirebase(email,password){
    ref.on('value',s=>{const vals=s.val()||{};properties.forEach(p=>{if(vals[p.id]){p.ownerUid=vals[p.id].ownerUid||null;p.ownerName=vals[p.id].ownerName||null}else{p.ownerUid=null;p.ownerName=null}});renderProperties()});
    db.ref('trindade/players').on('value',s=>{$('online').textContent='🟢 '+Object.keys(s.val()||{}).length+' online'});
    db.ref('trindade/players').on('value',s=>{const vals=s.val()||{};Object.entries(vals).forEach(([id,v])=>{if(id===uid)return;if(!remoteHumans[id]){const old=appearance;appearance={...appearance,name:v.name||'Jogador'};const h=makeHumanoid().group;appearance=old;remoteHumans[id]=h;h.position.set(Number(v.x)||0,0,Number(v.z)||0);h.rotation.y=Number(v.ry)||0;scene.add(h)}const h=remoteHumans[id];h.userData.netTarget={x:Number(v.x)||0,z:Number(v.z)||0,ry:Number(v.ry)||0};});Object.keys(remoteHumans).forEach(id=>{if(!vals[id]){scene.remove(remoteHumans[id]);delete remoteHumans[id]}})});
-   db.ref('trindade/buildings').on('value',s=>{const vals=s.val()||{};Object.keys(remoteBuildIds).forEach(id=>{});userObjs.forEach(g=>{if(g.userData.remote){scene.remove(g);const i=userObjs.indexOf(g);if(i>=0)userObjs.splice(i,1)}});remoteBuildIds=new Set();Object.entries(vals).forEach(([id,sp])=>{if(!sp||!BTYPES[sp.type])return;const g=buildObj(sp);g.userData.remote=true;g.userData.remoteId=id;scene.add(g);userObjs.push(g);remoteBuildIds.add(id)})});
+   /* construções remotas desativadas neste mapa de ruas */
    const playerRef=db.ref('trindade/players/'+uid);playerRef.onDisconnect().remove();
    await withTimeout(playerRef.update({uid,name:appearance.name,x:player.position.x,z:player.position.z,ry:player.rotation.y,updatedAt:Date.now()}),10000,'Registro do jogador');
    firebaseOn=true;$('fbStatus').textContent='Conectado e sincronizando';stage('Conectado!');
@@ -555,7 +588,7 @@ Object.entries(BTYPES).forEach(([k,T])=>{const b=document.createElement('button'
 BCOLORS.forEach(c=>{const b=document.createElement('button');b.className='sw';b.dataset.c=c;b.style.background='#'+c.toString(16).padStart(6,'0');b.onclick=()=>{bColor=c;refreshGhost();syncUI()};$('bColors').appendChild(b)});
 $('bDelBtn').onclick=()=>{bDel=!bDel;tint(hoverG,false);hoverG=null;refreshGhost();syncUI()};$('bRotBtn').onclick=rotateB;$('bUndoBtn').onclick=undoB;
 $('fMinus').onclick=()=>{bFloors=clamp(bFloors-1,1,30);refreshGhost();syncUI()};$('fPlus').onclick=()=>{bFloors=clamp(bFloors+1,1,30);refreshGhost();syncUI()};
-function setBuild(on){if(on&&!isAdmin){toast('Somente a ADM pode construir neste mundo.');return}buildMode=on;$('buildPanel').classList.toggle('open',on);$('buildBtn').classList.toggle('active',on);if(!on){tint(hoverG,false);hoverG=null;bDel=false;if(spec)setSpec(false,true)}refreshGhost();syncUI();if(on){camDist=Math.max(camDist,22);toast('Modo construção: velocidade ×3. Escolha o objeto e toque no chão.')}}
+function setBuild(on){if(on){toast('Construções desativadas neste mapa. Apenas ruas estão disponíveis.');return}buildMode=on;$('buildPanel').classList.toggle('open',on);$('buildBtn').classList.toggle('active',on);if(!on){tint(hoverG,false);hoverG=null;bDel=false;if(spec)setSpec(false,true)}refreshGhost();syncUI();if(on){camDist=Math.max(camDist,22);toast('Modo construção: velocidade ×3. Escolha o objeto e toque no chão.')}}
 function setSpec(on,silent){if(on&&!buildMode)return;spec=on;if(on){specPos.x=player.position.x;specPos.z=player.position.z;specPos.y=Math.max(specPos.y,18);specVel.x=specVel.z=0;camDist=Math.max(camDist,30);camPitch=Math.max(camPitch,.9)}else{specY=0}
  $('specCtl').classList.toggle('open',on);$('bSpecBtn').classList.toggle('sel',on);if(!silent)toast(on?'👁️ Modo espectador: câmera livre e rápida. ▲▼ ou E/Q para subir/descer. Shift = turbo.':'Voltou para o personagem')}
 $('bSpecBtn').onclick=()=>setSpec(!spec);
@@ -564,7 +597,7 @@ $('buildBtn').onclick=()=>{if(isAdmin)setBuild(!buildMode);else toast('Construç
 document.addEventListener('keydown',e=>{if(e.target&&['INPUT','SELECT'].includes(e.target.tagName))return;const k=e.key.toLowerCase();
  if(k==='b')setBuild(!buildMode);else if(!buildMode)return;else if(k==='v')setSpec(!spec);else if(k==='r')rotateB();else if(k==='x'){bDel=!bDel;tint(hoverG,false);hoverG=null;refreshGhost();syncUI()}else if(k==='z'&&(e.ctrlKey||e.metaKey)){undoB();e.preventDefault()}});
 window.connectFirebase=connectFirebase;
-makeWorld();loadLocal();loadBuild();renderProperties();animate();
+makeWorld();loadLocal();localStorage.removeItem('trindade_build');$('buildBtn').style.display='none';renderProperties();animate();
 }
 
 let loginMode='login';const loginToggle=document.getElementById('loginToggle'),loginAction=document.getElementById('loginAction');loginToggle.onclick=()=>{loginMode=loginMode==='login'?'register':'login';loginAction.textContent=loginMode==='login'?'Entrar':'Criar conta';loginToggle.textContent=loginMode==='login'?'Criar uma conta':'Voltar ao login';document.getElementById('loginSub').textContent=loginMode==='login'?'Entre na sua conta':'Crie sua conta para guardar seu progresso';document.getElementById('loginMsg').textContent=''};loginAction.onclick=async()=>{const e=document.getElementById('loginEmail').value.trim(),p=document.getElementById('loginPass').value;if(!e||!p){document.getElementById('loginMsg').textContent='Preencha e-mail e senha.';return}if(p.length<6){document.getElementById('loginMsg').textContent='A senha precisa ter pelo menos 6 caracteres.';return}loginAction.disabled=true;document.getElementById('loginMsg').textContent='Conectando...';try{if(typeof window.connectFirebase!=='function')throw new Error('O motor do jogo ainda está inicializando. Aguarde e tente novamente.');await window.connectFirebase(e,p)}catch(err){document.getElementById('loginMsg').textContent='ERRO: '+(err&&err.message?err.message:String(err));console.error('[Trindade login error]',err)}finally{loginAction.disabled=false}};window.addEventListener('load',()=>{setTimeout(()=>{document.getElementById('startup').style.display='none';document.getElementById('loginScreen').style.display='flex'},5000)});
