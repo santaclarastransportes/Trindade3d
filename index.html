@@ -240,32 +240,38 @@ function syncPosition(){if(!firebaseOn||!db||Date.now()-lastNet<900)return;lastN
 async function connectFirebase(email,password){
  const cfg={apiKey:"AIzaSyAjiuxYJr2dq8e4SM9D3qkj2J1bvDUp8BE",authDomain:"trindade3d.firebaseapp.com",databaseURL:"https://trindade3d-default-rtdb.firebaseio.com",projectId:"trindade3d",storageBucket:"trindade3d.firebasestorage.app",messagingSenderId:"695673268409",appId:"1:695673268409:web:56a3f7306c71fe2ddad368"};
  const msg=document.getElementById('loginMsg');
+ const stage=(s)=>{msg.textContent=s;console.log('[Trindade login]',s)};
+ const withTimeout=(promise,ms,label)=>Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error(label+' — tempo limite de '+Math.round(ms/1000)+'s')),ms))]);
  try{
-  msg.textContent='Carregando Firebase...';
-  await loadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js');
-  await loadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js');
-  await loadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js');
+  stage('1/4 Carregando SDK Firebase (app)...');
+  await withTimeout(loadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js'),12000,'SDK app');
+  stage('2/4 Carregando SDK Firebase (autenticação)...');
+  await withTimeout(loadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js'),12000,'SDK auth');
+  stage('3/4 Inicializando Firebase...');
   if(!firebase.apps.length)firebase.initializeApp(cfg);
   const auth=firebase.auth();
-  msg.textContent=loginMode==='register'?'Criando conta...':'Validando conta...';
-  if(loginMode==='register') await auth.createUserWithEmailAndPassword(email,password);
-  else await auth.signInWithEmailAndPassword(email,password);
-  uid=auth.currentUser.uid;isAdmin=(uid===ADMIN_UID);firebaseOn=true;db=firebase.database();
+  stage(loginMode==='register'?'4/4 Criando conta...':'4/4 Entrando na conta...');
+  const authPromise=loginMode==='register'?auth.createUserWithEmailAndPassword(email,password):auth.signInWithEmailAndPassword(email,password);
+  await withTimeout(authPromise,18000,'Autenticação');
+  uid=auth.currentUser.uid;isAdmin=(uid===ADMIN_UID);firebaseOn=false;db=null;
   document.getElementById('buildBtn').style.display=isAdmin?'':'none';if(!isAdmin)setBuild(false);
-  // Libera a entrada no jogo após a autenticação; sincronização do banco é tentada em seguida.
   document.getElementById('loginScreen').style.display='none';toast('Login concluído!');
-  $('fbStatus').textContent='Conta autenticada. Tentando sincronizar...';
-  const safeTimeout=(promise,ms,label)=>Promise.race([promise,new Promise((_,rej)=>setTimeout(()=>rej(new Error(label+' demorou demais')),ms))]);
+  $('fbStatus').textContent='Conta autenticada. Tentando conectar ao mundo...';
+  stage('Conta autenticada. Carregando mundo...');
   try{
+   stage('Conectando ao Realtime Database...');
+   await withTimeout(loadScript('https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js'),12000,'SDK database');
+   db=firebase.database();
    const ref=db.ref('trindade/properties');
-   const snap=await safeTimeout(ref.get(),10000,'Leitura dos imóveis');const remoteProps=snap.val()||{};
+   const snap=await withTimeout(ref.get(),10000,'Leitura dos imóveis');const remoteProps=snap.val()||{};
    properties.forEach(p=>{if(remoteProps[p.id]){p.ownerUid=remoteProps[p.id].ownerUid||null;p.ownerName=remoteProps[p.id].ownerName||null}});
    ref.on('value',s=>{const vals=s.val()||{};properties.forEach(p=>{if(vals[p.id]){p.ownerUid=vals[p.id].ownerUid||null;p.ownerName=vals[p.id].ownerName||null}else{p.ownerUid=null;p.ownerName=null}});renderProperties()});
    db.ref('trindade/players').on('value',s=>{$('online').textContent='🟢 '+Object.keys(s.val()||{}).length+' online'});
-   const playerRef=db.ref('trindade/players/'+uid);playerRef.onDisconnect().remove();await safeTimeout(playerRef.update({uid,name:appearance.name,x:player.position.x,z:player.position.z,updatedAt:Date.now()}),10000,'Registro do jogador');
-   $('fbStatus').textContent='Conectado e sincronizando';
-  }catch(syncErr){$('fbStatus').textContent='Entrou, mas a sincronização falhou: '+(syncErr.message||syncErr);console.warn('Firebase sync:',syncErr)}
- }catch(e){msg.textContent=(e&&e.message)||'Falha de conexão. Confira internet e configurações Firebase.';throw e}
+   const playerRef=db.ref('trindade/players/'+uid);playerRef.onDisconnect().remove();
+   await withTimeout(playerRef.update({uid,name:appearance.name,x:player.position.x,z:player.position.z,updatedAt:Date.now()}),10000,'Registro do jogador');
+   firebaseOn=true;$('fbStatus').textContent='Conectado e sincronizando';stage('Conectado!');
+  }catch(syncErr){$('fbStatus').textContent='Offline do multiplayer: '+(syncErr.message||syncErr);console.warn('Firebase sync:',syncErr);stage('Login OK; conexão do mundo falhou: '+(syncErr.message||syncErr));}
+ }catch(e){stage('ERRO: '+(e&&e.message||'Falha desconhecida'));throw e}
 }
 
 function loadScript(src){return new Promise((res,rej)=>{let s=document.createElement('script');s.src=src;s.onload=()=>{clearTimeout(t);res()};s.onerror=()=>{clearTimeout(t);rej(Error('Falha ao carregar Firebase ('+src.split('/').slice(-2).join('/')+'). Verifique a internet.'))};let t=setTimeout(()=>{s.remove();rej(Error('Tempo esgotado ao carregar Firebase. Verifique internet ou bloqueio do navegador.'))},15000);document.head.appendChild(s)})}
