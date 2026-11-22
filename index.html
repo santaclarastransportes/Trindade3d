@@ -169,41 +169,71 @@ function makeWorld(){
     });
   }
   const P=(x,y)=>[(x-540)*.205,(y-695)*.205];
+  // Rede viária traçada visualmente a partir do print enviado (coordenadas do print).
   const paths=[
-   [[360,-20],[300,95],[220,220],[140,355],[55,465],[-25,520]],
-   [[-20,700],[80,735],[160,820],[230,925],[300,1035],[370,1180],[455,1395]],
-   [[-20,590],[115,565],[250,545],[385,525],[525,510],[680,525],[820,555],[980,515],[1100,535]],
-   [[130,0],[220,120],[280,240],[315,365],[350,485],[390,610],[430,735]],
-   [[460,-10],[410,120],[380,245],[400,370],[430,500],[470,630]],
-   [[-10,465],[115,450],[230,430],[350,405],[470,390],[600,410],[730,450]],
-   [[120,245],[210,275],[300,300],[390,325],[490,350],[600,370]],
-   [[235,120],[270,230],[300,345],[330,455],[360,570],[390,690]],
-   [[430,245],[470,330],[520,420],[585,510],[655,575]],
-   [[150,485],[210,540],[265,600],[315,675],[355,755]],
-   [[255,600],[300,680],[345,765],[395,850],[450,930]],
-   [[320,710],[430,735],[550,750],[670,765]],
-   [[270,800],[350,850],[430,900],[530,930],[650,950]],
-   [[350,920],[420,990],[500,1060],[600,1100]],
-   [[440,1040],[510,1110],[580,1190],[650,1270]],
-   [[510,1220],[600,1190],[700,1170],[800,1160],[900,1180]],
-   [[590,1060],[700,1030],[810,1020],[920,1040]],
-   [[680,900],[780,880],[880,900],[990,940]],
-   [[680,680],[780,700],[900,735],[1030,790]],
-   [[690,430],[790,430],[900,450],[1010,480]],
-   [[690,300],[780,315],[875,350],[970,380]],
-   [[780,200],[860,225],[950,250],[1080,265]],
-   [[850,0],[835,110],[830,220],[850,320]],
-   [[950,0],[930,110],[930,220],[960,300]],
-   [[1000,300],[1000,420],[1020,540],[1050,650]],
-   [[100,760],[170,850],[220,950],[250,1070]],
-   [[180,900],[260,940],[350,970],[450,1000]],
-   [[250,1080],[340,1100],[430,1130],[520,1160]],
-   [[370,1180],[460,1200],[550,1230],[650,1260]],
-   [[500,1300],[600,1320],[700,1350],[800,1390]]
+   // Miolo norte e ligações próximas à Casa / ferro-velho
+   [[275,0],[250,75],[265,150],[300,225],[325,305],[350,385],[370,470],[395,550]],
+   [[455,0],[425,85],[405,165],[390,245],[405,325],[430,405],[455,485],[480,565]],
+   [[350,145],[405,160],[465,170],[525,190],[580,225],[635,260]],
+   [[275,205],[330,225],[385,235],[445,245],[505,270],[565,305],[620,345]],
+   [[285,245],[300,315],[320,385],[345,455],[370,525]],
+   [[365,240],[380,315],[400,390],[420,465],[445,540]],
+   [[430,245],[455,315],[485,385],[515,455],[545,525]],
+   [[280,315],[340,330],[405,345],[470,365],[535,390],[600,420]],
+   [[250,395],[315,410],[380,425],[450,440],[520,465],[590,495]],
+   [[300,470],[360,485],[425,505],[490,525],[555,550],[625,575]],
+   [[335,555],[395,570],[455,585],[520,605],[585,625],[650,650]],
+   // Ruas do centro: Av. Primavera e conexões
+   [[0,585],[95,575],[185,565],[275,555],[365,545],[455,535],[545,525],[635,535],[725,555]],
+   [[0,615],[90,600],[180,590],[270,580],[360,570],[450,560],[540,555],[630,565]],
+   [[235,480],[255,525],[275,575],[295,625],[320,675]],
+   [[275,505],[315,545],[355,585],[395,625],[435,665]],
+   [[390,530],[420,575],[450,620],[485,665],[520,710]],
+   [[500,520],[535,555],[570,590],[605,625],[645,660]],
+   [[585,515],[630,525],[680,545],[730,565],[785,590]],
+   [[680,465],[735,465],[790,480],[845,500],[900,525],[960,550],[1020,565]],
+   [[685,435],[735,435],[785,445],[835,465]],
+   [[690,405],[740,405],[790,415],[840,435]],
+   // Lado leste: quadras e ruas em torno do hospital
+   [[690,300],[745,305],[800,315],[855,330],[910,350],[970,370],[1035,390]],
+   [[680,350],[730,350],[780,360],[830,380],[880,405],[930,430],[985,455]],
+   [[685,410],[680,470],[680,530],[690,590],[710,650],[730,710]],
+   [[760,420],[770,475],[785,530],[805,585],[830,640],[855,695]],
+   [[835,430],[850,485],[870,540],[895,595],[925,650],[955,705]],
+   [[910,455],[930,510],[950,565],[975,620],[1000,675],[1035,725]],
+   [[1000,290],[1000,350],[1010,415],[1030,480],[1050,545]],
+   [[965,290],[965,350],[975,410],[995,470]],
+   // Região sul e ruas residenciais
+   [[150,650],[170,720],[190,790],[215,860],[245,930],[280,1000]],
+   [[235,650],[255,720],[280,790],[305,860],[335,930],[365,1000]],
+   [[320,675],[350,735],[380,795],[415,855],[450,915],[485,975]],
+   [[420,690],[450,745],[480,800],[515,855],[550,910],[590,965]],
+   [[520,710],[555,765],[590,820],[625,875],[660,930],[700,985]],
+   [[610,700],[650,750],[690,800],[730,850],[770,900],[815,950]],
+   [[700,720],[750,750],[800,780],[850,815],[900,850],[950,885]],
+   [[760,800],[805,845],[850,890],[895,935],[940,980]],
+   [[280,800],[340,815],[400,835],[460,855],[520,875],[580,895]],
+   [[300,870],[365,890],[430,915],[495,940],[560,965],[625,990]],
+   [[355,950],[420,975],[485,1000],[550,1025],[615,1050]],
+   [[420,1030],[485,1050],[550,1075],[615,1100],[680,1125]],
+   [[500,1110],[560,1130],[620,1150],[680,1170],[740,1190]],
+   [[590,1040],[650,1060],[710,1080],[770,1100],[830,1120]],
+   [[680,970],[745,985],[810,1005],[875,1025],[940,1045]],
+   [[760,900],[820,920],[880,945],[940,970],[1000,995]],
+   [[850,1060],[900,1080],[950,1105],[1000,1130]],
+   [[300,1080],[360,1100],[420,1125],[480,1150],[540,1175]],
+   [[370,1170],[430,1190],[490,1215],[550,1240],[610,1265]],
+   [[470,1260],[530,1280],[590,1300],[650,1320],[710,1340]],
+   // Acessos e ruas de contorno
+   [[0,470],[75,455],[150,440],[225,425],[300,410]],
+   [[0,760],[80,750],[160,755],[240,775],[320,800]],
+   [[90,1180],[150,1130],[205,1080],[255,1030],[300,980]],
+   [[360,1390],[330,1310],[300,1230],[275,1150],[250,1070]],
+   [[485,1390],[455,1310],[425,1230],[395,1150],[365,1070]]
   ];
-  paths.forEach(path=>street(path.map(([x,y])=>P(x,y)),4.2));
-  street([[360,-20],[300,95],[220,220],[140,355],[55,465],[-25,520]].map(([x,y])=>P(x,y)),7.2);
-  street([[-20,700],[80,735],[160,820],[230,925],[300,1035],[370,1180],[455,1395]].map(([x,y])=>P(x,y)),7.2);
+  paths.forEach(path=>street(path.map(([x,y])=>P(x,y)),1.25));
+  street([[365,-20],[300,105],[225,235],[155,365],[85,485],[0,590]].map(([x,y])=>P(x,y)),2.7);
+  street([[0,760],[95,820],[165,920],[230,1030],[300,1150],[390,1290],[485,1395]].map(([x,y])=>P(x,y)),2.7);
   createPlayer();updateCamera(1);
 }
 function mat(color,roughness=.85){return new THREE.MeshStandardMaterial({color,roughness})}
@@ -600,7 +630,7 @@ Object.entries(BTYPES).forEach(([k,T])=>{const b=document.createElement('button'
 BCOLORS.forEach(c=>{const b=document.createElement('button');b.className='sw';b.dataset.c=c;b.style.background='#'+c.toString(16).padStart(6,'0');b.onclick=()=>{bColor=c;refreshGhost();syncUI()};$('bColors').appendChild(b)});
 $('bDelBtn').onclick=()=>{bDel=!bDel;tint(hoverG,false);hoverG=null;refreshGhost();syncUI()};$('bRotBtn').onclick=rotateB;$('bUndoBtn').onclick=undoB;
 $('fMinus').onclick=()=>{bFloors=clamp(bFloors-1,1,30);refreshGhost();syncUI()};$('fPlus').onclick=()=>{bFloors=clamp(bFloors+1,1,30);refreshGhost();syncUI()};
-function setBuild(on){if(on){toast('Construções desativadas neste mapa. Apenas ruas estão disponíveis.');return}buildMode=on;$('buildPanel').classList.toggle('open',on);$('buildBtn').classList.toggle('active',on);if(!on){tint(hoverG,false);hoverG=null;bDel=false;if(spec)setSpec(false,true)}refreshGhost();syncUI();if(on){camDist=Math.max(camDist,22);toast('Modo construção: velocidade ×3. Escolha o objeto e toque no chão.')}}
+function setBuild(on){buildMode=on;$('buildPanel').classList.toggle('open',on);$('buildBtn').classList.toggle('active',on);if(!on){tint(hoverG,false);hoverG=null;bDel=false;if(spec)setSpec(false,true)}refreshGhost();syncUI();if(on){camDist=Math.max(camDist,22);toast('Modo construção: velocidade ×3. Escolha o objeto e toque no chão.')}}
 function setSpec(on,silent){if(on&&!buildMode)return;spec=on;if(on){specPos.x=player.position.x;specPos.z=player.position.z;specPos.y=Math.max(specPos.y,18);specVel.x=specVel.z=0;camDist=Math.max(camDist,30);camPitch=Math.max(camPitch,.9)}else{specY=0}
  $('specCtl').classList.toggle('open',on);$('bSpecBtn').classList.toggle('sel',on);if(!silent)toast(on?'👁️ Modo espectador: câmera livre e rápida. ▲▼ ou E/Q para subir/descer. Shift = turbo.':'Voltou para o personagem')}
 $('bSpecBtn').onclick=()=>setSpec(!spec);
@@ -609,7 +639,7 @@ $('buildBtn').onclick=()=>{if(isAdmin)setBuild(!buildMode);else toast('Construç
 document.addEventListener('keydown',e=>{if(e.target&&['INPUT','SELECT'].includes(e.target.tagName))return;const k=e.key.toLowerCase();
  if(k==='b')setBuild(!buildMode);else if(!buildMode)return;else if(k==='v')setSpec(!spec);else if(k==='r')rotateB();else if(k==='x'){bDel=!bDel;tint(hoverG,false);hoverG=null;refreshGhost();syncUI()}else if(k==='z'&&(e.ctrlKey||e.metaKey)){undoB();e.preventDefault()}});
 window.connectFirebase=connectFirebase;
-makeWorld();loadLocal();localStorage.removeItem('trindade_build');$('buildBtn').style.display='none';renderProperties();animate();
+makeWorld();loadLocal();$('buildBtn').style.display='';renderProperties();animate();
 }
 
 let loginMode='login';const loginToggle=document.getElementById('loginToggle'),loginAction=document.getElementById('loginAction');loginToggle.onclick=()=>{loginMode=loginMode==='login'?'register':'login';loginAction.textContent=loginMode==='login'?'Entrar':'Criar conta';loginToggle.textContent=loginMode==='login'?'Criar uma conta':'Voltar ao login';document.getElementById('loginSub').textContent=loginMode==='login'?'Entre na sua conta':'Crie sua conta para guardar seu progresso';document.getElementById('loginMsg').textContent=''};loginAction.onclick=async()=>{const e=document.getElementById('loginEmail').value.trim(),p=document.getElementById('loginPass').value;if(!e||!p){document.getElementById('loginMsg').textContent='Preencha e-mail e senha.';return}if(p.length<6){document.getElementById('loginMsg').textContent='A senha precisa ter pelo menos 6 caracteres.';return}loginAction.disabled=true;document.getElementById('loginMsg').textContent='Conectando...';try{if(typeof window.connectFirebase!=='function')throw new Error('O motor do jogo ainda está inicializando. Aguarde e tente novamente.');await window.connectFirebase(e,p)}catch(err){document.getElementById('loginMsg').textContent='ERRO: '+(err&&err.message?err.message:String(err));console.error('[Trindade login error]',err)}finally{loginAction.disabled=false}};window.addEventListener('load',()=>{setTimeout(()=>{document.getElementById('startup').style.display='none';document.getElementById('loginScreen').style.display='flex'},5000)});
