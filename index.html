@@ -264,9 +264,11 @@ function parseGLB(b64){
  const dv=new DataView(u8.buffer);const jl=dv.getUint32(12,true);
  const json=JSON.parse(new TextDecoder().decode(u8.subarray(20,20+jl)));
  const bo=20+jl+8;
- const acc=i=>{const a=json.accessors[i],v=json.bufferViews[a.bufferView];const off=bo+(v.byteOffset||0)+(a.byteOffset||0);
-  const n=a.count*(a.type==='VEC3'?3:1);const copy=u8.slice(off,off+n*(a.componentType===5126?4:2)).buffer;
-  return a.componentType===5126?new Float32Array(copy):new Uint16Array(copy)};
+ const acc=i=>{const a=json.accessors[i],v=json.bufferViews[a.bufferView];const base=bo+(v.byteOffset||0)+(a.byteOffset||0);
+  const nc=a.type==='VEC3'?3:1,cs=a.componentType===5126?4:2,stride=v.byteStride||nc*cs;
+  const out=a.componentType===5126?new Float32Array(a.count*nc):new Uint16Array(a.count*nc);
+  for(let k=0;k<a.count;k++)for(let c=0;c<nc;c++){const o=base+k*stride+c*cs;out[k*nc+c]=a.componentType===5126?dv.getFloat32(o,true):dv.getUint16(o,true)}
+  return out};
  return {json,acc};
 }
 let policeGLBCache=null;
