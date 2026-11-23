@@ -653,11 +653,22 @@ function restoreG(g){scene.add(g);if(g.userData.prop&&!properties.includes(g.use
 function saveBuild(){try{const specs=userObjs.filter(g=>g.userData.spec&&!g.userData.remote).map(g=>g.userData.spec);localStorage.setItem('trindade_build',JSON.stringify({objs:specs,del:[...deletedOids]}));if(firebaseOn&&isAdmin&&db)db.ref('trindade/buildings').set(specs).catch(e=>toast('Falha ao sincronizar construções: '+e.message));}catch(e){console.error('Falha ao salvar construções',e);toast('Não foi possível salvar as construções.')}}
 function loadBuild(){try{const d=JSON.parse(localStorage.getItem('trindade_build')||'null');if(!d)return;deletedOids.clear();(d.del||[]).forEach(id=>deletedOids.add(id));(d.objs||[]).forEach(s=>{if(!s||!BTYPES[s.type])return;if(userObjs.some(g=>g.userData.spec&&g.userData.spec.houseId&&g.userData.spec.houseId===s.houseId))return;const g=buildObj(s);scene.add(g);userObjs.push(g)});renderProperties();}catch(e){console.warn('Falha ao restaurar construções locais',e)}}
 let pendingHouseSpec=null;
-function finalizeHouseBuild(spec){const g=buildObj(spec);scene.add(g);userObjs.push(g);undoStack.push({k:'add',g});saveBuild();renderProperties();toast('Casa construída e registrada.')}
+function finalizeHouseBuild(spec){
+ // Cria a casa definitiva; em seguida desloca a prévia para não ficar sobreposta à construção sólida.
+ const finalSpec={...spec};
+ let g;
+ try{g=buildObj(finalSpec,true);if(!g||!g.children.length)throw new Error('O modelo da casa não gerou objetos 3D.');
+  g.position.set(finalSpec.x,0,finalSpec.z);g.rotation.y=(Number(finalSpec.rot)||0)*Math.PI/2;
+  g.userData.spec=finalSpec;g.userData.deletable=true;scene.add(g);userObjs.push(g);undoStack.push({k:'add',g});
+  saveBuild();renderProperties();
+  if(ghost){ghost.position.set(player.position.x,0,player.position.z-18);ghost.rotation.y=bRot*Math.PI/2;}
+  toast('Casa construída e registrada no mapa!');
+ }catch(err){if(g&&g.parent)g.parent.remove(g);console.error('Erro ao finalizar casa:',err);toast('Falha ao criar casa: '+(err.message||err));}
+}
 function buildTap(e){if(!buildMode)return;
  if(bDel){const g=pickG(e);if(!g){toast('Toque em um objeto para excluir');return}tint(g,false);hoverG=null;removeG(g);undoStack.push({k:'del',g});saveBuild();renderProperties();toast('Objeto excluído • ↩ desfaz');return}
  const v=groundAt(e);if(!v)return;let spec=curSpec(v);if(BTYPES[bType].house){const typ=HOUSE_TYPES[bType];spec.salePrice=typ.priceDefault;spec.houseId='casa_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7);pendingHouseSpec=spec;$('housePriceInput').value=String(typ.priceDefault);$('housePriceModal').classList.add('open');return}const g=buildObj(spec);scene.add(g);userObjs.push(g);undoStack.push({k:'add',g});saveBuild();renderProperties()}
-$('housePriceCancel').onclick=()=>{pendingHouseSpec=null;$('housePriceModal').classList.remove('open')};$('housePriceConfirm').onclick=()=>{if(!pendingHouseSpec)return;const val=Number($('housePriceInput').value);if(!Number.isFinite(val)||val<0){toast('Digite um preço válido (zero ou maior).');return}pendingHouseSpec.salePrice=Math.floor(val);const spec=pendingHouseSpec;pendingHouseSpec=null;$('housePriceModal').classList.remove('open');finalizeHouseBuild(spec)};
+$('housePriceCancel').onclick=()=>{pendingHouseSpec=null;$('housePriceModal').classList.remove('open')};$('housePriceConfirm').onclick=()=>{if(!pendingHouseSpec)return;const val=Number($('housePriceInput').value);if(!Number.isFinite(val)||val<0){toast('Digite um preço válido (zero ou maior).');return}pendingHouseSpec.salePrice=Math.floor(val);const spec={...pendingHouseSpec};$('housePriceModal').classList.remove('open');finalizeHouseBuild(spec);pendingHouseSpec=null};
 function undoB(){const a=undoStack.pop();if(!a){toast('Nada para desfazer');return}if(a.k==='add')removeG(a.g);else restoreG(a.g);saveBuild();renderProperties()}
 function rotateB(){bRot=(bRot+1)%4;if(ghost)ghost.rotation.y=bRot*Math.PI/2}
 function syncUI(){const T=BTYPES[bType];$('bItems').querySelectorAll('button').forEach(b=>b.classList.toggle('sel',!bDel&&b.dataset.t===bType));$('bDelBtn').classList.toggle('sel',bDel);
