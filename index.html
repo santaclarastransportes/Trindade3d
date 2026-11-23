@@ -447,13 +447,15 @@ function refreshAvatar(){if(!player)return;const pos=player.position.clone(),ry=
 // Câmera orbital em volta do jogador (arrastar = olhar ao redor)
 function updateCamera(dt){
  const k=1-Math.exp(-dt*14);
- // Ao dirigir, câmera fixa atrás do carro, olhando sempre para a frente.
- // Não usa camYaw/camPitch do modo a pé: acompanha apenas a rotação do veículo.
+ // Câmera travada atrás do veículo e apontada para a dianteira enquanto dirige.
+ // A orientação vem exclusivamente do carro; gestos de rotação da câmera não interferem.
  if(drivingCar&&monza){
    const forward=new THREE.Vector3(0,0,-1).applyQuaternion(monza.quaternion).normalize();
-   const desiredPos=monza.position.clone().addScaledVector(forward,-10.5);desiredPos.y+=4.4;
-   const lookTarget=monza.position.clone().addScaledVector(forward,8);lookTarget.y+=1.25;
-   camera.position.lerp(desiredPos,1-Math.exp(-dt*7));
+   const desiredPos=monza.position.clone().addScaledVector(forward,-10.5);
+   desiredPos.y=monza.position.y+4.4;
+   const lookTarget=monza.position.clone().addScaledVector(forward,8);
+   lookTarget.y=monza.position.y+1.25;
+   camera.position.lerp(desiredPos,1-Math.exp(-dt*9));
    camera.lookAt(lookTarget);
    return;
  }
@@ -1031,19 +1033,19 @@ function bCasaPalafita(s,preview=false){
  box(13.1,4.5,-4.84,2.75,2.55,.08,0x352e29);
  box(15.8,4.25,-4.72,2.0,2.7,.18,0x6d503c);
  box(15.8,4.25,-4.84,1.72,2.4,.08,0x3a3029);
- // varanda coberta à esquerda, telhado baixo de madeira
- box(-5.0,2.55,-1.7,11.4,.22,9.2,0x79583d);
- const porchRoof=box(-5.0,5.25,-1.7,12.0,.28,9.8,0x6b4b34);porchRoof.rotation.x=-.035;
- for(const x of [-10.5,-5.1,.2])for(const z of [-5.8,2.5])box(x,2.75,z,.34,5.5,.34,wood);
- // vigas visíveis sob a cobertura
- for(let x=-10.2;x<=.1;x+=2.5)box(x,5.08,-1.7,.16,.18,9.3,darkWood);
- // varanda elevada, quintal livre e escada de alvenaria no próprio quintal
- box(-5.0,.95,-1.8,11.3,.34,9.0,0x8a755e);
- // três degraus largos, alinhados com a varanda e apoiados no chão do quintal
- box(-5.0,.78,-6.25,4.9,.34,1.15,0x92775b);
- box(-5.0,.47,-7.35,4.9,.34,1.15,0x9a7b59);
- box(-5.0,.16,-8.45,4.9,.30,1.15,0xa18462);
- // quintal amplo e limpo, sem móveis, baldes, entulho ou objetos decorativos soltos
+ // Área ampla na frente da casa: somente piso e cobertura, sem paredes ou divisórias.
+ // O piso e os degraus são atravessáveis para o personagem conseguir acessar a área.
+ const areaFloor=box(9.5,.14,-8.7,14.2,.28,7.8,0x8a755e);
+ areaFloor.userData.noCollide=true;
+ // Cobertura nivelada com a linha dos beirais do telhado principal da casa (Y=7.0).
+ const areaRoof=box(9.5,7.0,-8.7,14.8,.28,8.2,0x51463b);
+ areaRoof.userData.noCollide=true;
+ // Escada baixa de acesso, sem bloqueio de colisão.
+ for(const [y,z] of [[.12,-5.0],[.10,-4.35]]){
+   const step=box(5.0,y,z,3.8,.20,.9,0x92775b);
+   step.userData.noCollide=true;
+ }
+ // Quintal amplo e limpo, sem móveis, baldes, entulho ou objetos decorativos soltos.
  box(0,.025,0,36,.05,30,0x98764e);
 }
 function bConcessionaria(){
