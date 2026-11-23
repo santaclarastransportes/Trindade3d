@@ -1045,7 +1045,54 @@ function bCasaPalafita(s,preview=false){
    const step=box(5.0,y,z,3.8,.20,.9,0x92775b);
    step.userData.noCollide=true;
  }
- // Quintal amplo e limpo, sem móveis, baldes, entulho ou objetos decorativos soltos.
+ // Móveis da varanda, inspirados na foto: sofás antigos estampados,
+ // poltronas, almofadas e mesas baixas, mantendo passagem livre no centro.
+ const sofa=(cx,cz,w,fabric,pattern)=>{
+   // pés e estrutura
+   for(const dx of [-w/2+.22,w/2-.22]) for(const dz of [-.48,.48])
+     box(cx+dx,.28,cz+dz,.13,.42,.13,0x493326);
+   box(cx,.55,cz,w,.48,1.28,0x594235); // base
+   box(cx,.86,cz-.10,w-.24,.28,1.02,fabric); // assento
+   box(cx,.98,cz+.48,w-.18,1.18,.28,fabric); // encosto
+   for(const dx of [-w/2+.12,w/2-.12]){
+     box(cx+dx,.78,cz,w*.09,.72,1.30,0x684936);
+     box(cx+dx,.91,cz-.12,w*.075,.22,1.05,pattern);
+   }
+   // costuras/retalhos que dão o aspecto de estofado usado
+   for(let dx=-w/2+.55;dx<w/2-.3;dx+=.58){
+     box(cx+dx,.89,cz-.105,.035,.025,.94,pattern);
+     box(cx+dx,.99,cz+.335,.035,.82,.018,pattern);
+   }
+   for(const dx of [-w*.25,w*.25]){
+     const pillow=box(cx+dx,1.20,cz+.25,.62,.58,.22,pattern);
+     pillow.rotation.z=(dx<0?-.08:.08);
+   }
+ };
+ sofa(6.35,-8.0,3.55,0x6f3937,0x9b6651);  // sofá vermelho estampado
+ sofa(12.45,-8.15,3.75,0x3d3430,0x8d5148); // sofá de tecido escuro
+ // Poltrona antiga à esquerda
+ box(4.15,.28,-10.55,.14,.42,.14,0x493326);box(5.65,.28,-10.55,.14,.42,.14,0x493326);
+ box(4.9,.55,-10.55,1.9,.48,1.35,0x51413b);
+ box(4.9,.86,-10.98,1.65,.28,.92,0x354e55);
+ box(4.9,1.0,-10.08,1.72,1.18,.28,0x354e55);
+ box(4.05,.78,-10.55,.24,.72,1.35,0x51413b);box(5.75,.78,-10.55,.24,.72,1.35,0x51413b);
+ box(4.9,1.19,-10.38,.65,.48,.20,0x9a6b55);
+ // Mesinha de centro baixa de madeira
+ box(9.45,.48,-11.05,2.45,.16,1.05,0x69472f);
+ for(const x of [8.45,10.45])for(const z of [-11.42,-10.68])box(x,.24,z,.10,.48,.10,0x493326);
+ box(9.45,.58,-11.05,2.35,.08,.95,0x8a6241);
+ // Mesa lateral e pequenos objetos domésticos
+ box(14.9,.55,-10.45,.85,.12,.78,0x68452e);
+ for(const x of [14.58,15.22])for(const z of [-10.72,-10.18])box(x,.28,z,.08,.52,.08,0x493326);
+ box(14.9,.68,-10.45,.35,.18,.35,0xb7a17c);
+ // Tapete gasto sob a sala de estar e vasos junto às laterais
+ box(9.5,.30,-9.65,8.0,.06,2.0,0x725b4c);
+ const pot=box(3.35,.48,-6.25,.58,.82,.58,0x9a7655);
+ box(3.35,1.35,-6.25,.10,.95,.10,0x52733e);
+ for(const [x,z] of [[3.0,-6.3],[3.7,-6.45],[3.4,-5.95],[15.8,-6.2]]){
+   const leaf=box(x,1.52,z,.16,.65,.16,0x547b45);leaf.rotation.z=(x<9?-.35:.35);
+ }
+ // Quintal de chão batido ao redor da varanda.
  box(0,.025,0,36,.05,30,0x98764e);
 }
 function bConcessionaria(){
