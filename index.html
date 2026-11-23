@@ -336,22 +336,23 @@ function animate(){
  const sy=Math.sin(camYaw),cy=Math.cos(camYaw),maxSp=spec?(running?90:34)*(1+specPos.y/22):(running?8.2:4.6)*(buildMode?3:1);
  // Pedestre: movimento relativo à câmera. Carro: física com aceleração, freio, ré e esterçamento.
  let tx=(cy*ix+sy*iz)*maxSp,tz=(-sy*ix+cy*iz)*maxSp;
- if(drivingCar&&monza){const throttle=carInput.throttle?1:0,brake=carInput.brake?1:0,steer=(carInput.right?1:0)-(carInput.left?1:0);
-   if(throttle){carSpeed=Math.min(26,carSpeed+9.5*dt)}
-   if(brake){if(carSpeed>0)carSpeed=Math.max(0,carSpeed-19*dt);else carSpeed=Math.max(-7,carSpeed-5.5*dt)}
-   if(!throttle&&!brake)carSpeed*=Math.exp(-1.45*dt);
-   // Direção automotiva: rodas dianteiras esterçam e a carroceria gira em torno do eixo traseiro.
-   const steerAngle=steer*.48; // máximo aproximado de 28 graus
+ if(drivingCar&&monza){
+   const throttle=carInput.throttle?1:0,brake=carInput.brake?1:0,steer=(carInput.right?1:0)-(carInput.left?1:0);
+   // Stable arcade physics: restrained acceleration, reverse, and capped steering rotation.
+   if(throttle)carSpeed=Math.min(18,carSpeed+5.2*dt);
+   if(brake){if(carSpeed>0)carSpeed=Math.max(0,carSpeed-11*dt);else carSpeed=Math.max(-4.2,carSpeed-3.2*dt)}
+   if(!throttle&&!brake)carSpeed*=Math.exp(-1.9*dt);
+   if(Math.abs(carSpeed)<.035)carSpeed=0;
+   const steerAngle=steer*.34;
    if(monza.userData.wheels)monza.userData.wheels.forEach(w=>{if(w.front)w.group.rotation.y=steerAngle;});
-   const wheelBase=2.84;
-   const yawRate=(Math.abs(carSpeed)>0.02?(carSpeed/wheelBase)*Math.tan(steerAngle):0);
-   const rearAnchor=new THREE.Vector3(0,0,1.42).applyEuler(monza.rotation).add(monza.position);
+   // Rotation is speed-sensitive but strictly capped, preventing the car from spinning.
+   const wheelBase=2.84,yawRaw=(carSpeed/wheelBase)*Math.tan(steerAngle);
+   const yawRate=Math.max(-.62,Math.min(.62,yawRaw));
    monza.rotation.y+=yawRate*dt;
-   const rearOffset=new THREE.Vector3(0,0,1.42).applyEuler(monza.rotation);
-   monza.position.copy(rearAnchor).sub(rearOffset); // pivô de giro no eixo traseiro
    const forwardX=Math.sin(monza.rotation.y)*carSpeed,forwardZ=-Math.cos(monza.rotation.y)*carSpeed;
    tx=forwardX;tz=forwardZ;vel.x=tx;vel.z=tz;
- }else{const acc=1-Math.exp(-dt*(len>0?11:14));if(spec){specVel.x+=(tx-specVel.x)*acc;specVel.z+=(tz-specVel.z)*acc;specPos.x+=specVel.x*dt;specPos.z+=specVel.z*dt;specPos.y=clamp(specPos.y+(specY+((keys.e?1:0)-(keys.q?1:0)))*clamp(specPos.y,6,60)*1.2*dt,2,150);vel.x+=(0-vel.x)*acc;vel.z+=(0-vel.z)*acc}else{vel.x+=(tx-vel.x)*acc;vel.z+=(tz-vel.z)*acc}}
+ }
+ else{const acc=1-Math.exp(-dt*(len>0?11:14));if(spec){specVel.x+=(tx-specVel.x)*acc;specVel.z+=(tz-specVel.z)*acc;specPos.x+=specVel.x*dt;specPos.z+=specVel.z*dt;specPos.y=clamp(specPos.y+(specY+((keys.e?1:0)-(keys.q?1:0)))*clamp(specPos.y,6,60)*1.2*dt,2,150);vel.x+=(0-vel.x)*acc;vel.z+=(0-vel.z)*acc}else{vel.x+=(tx-vel.x)*acc;vel.z+=(tz-vel.z)*acc}}
  if(drivingCar&&monza){const nx=monza.position.x+vel.x*dt,nz=monza.position.z+vel.z*dt;if(!collidesWithBuild(nx,nz)){monza.position.x=nx;monza.position.z=nz;}else{carSpeed*=.22;vel.x=vel.z=0;}player.position.copy(monza.position);player.rotation.copy(monza.rotation)}else if(!spec)movePlayerWithCollision(vel.x*dt,vel.z*dt);else{specPos.x+=specVel.x*dt;specPos.z+=specVel.z*dt;}const fo=spec?specPos:player.position,gx=Math.round(fo.x/4)*4,gz=Math.round(fo.z/4)*4;groundMesh.position.set(gx,0,gz);sunLight.position.set(gx-45,75,gz+35);sunLight.target.position.set(gx,0,gz);
  const sp=Math.hypot(vel.x,vel.z);
  if(sp>.2){let d=Math.atan2(vel.x,vel.z)-player.rotation.y;d=Math.atan2(Math.sin(d),Math.cos(d));player.rotation.y+=d*(1-Math.exp(-dt*13))}
