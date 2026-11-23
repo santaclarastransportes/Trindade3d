@@ -589,7 +589,7 @@ function buildHouseExterior(s,kind,preview=false){
  if(preview){return;}
  // Interior oculto, construído em coordenadas virtuais afastadas do mapa principal
  const interior=new THREE.Group();interior.visible=false;interior.userData.isInterior=true;add(interior);
- const prev=curGroup;curGroup=inter;const ix=500,iz=500;
+ const prev=curGroup;curGroup=interior;const ix=500,iz=500;
  box(ix,0,iz,11, .18,10,0xb8a990); // piso
  box(ix,2.1,iz-5,11,4.2,.18,wall);box(ix,2.1,iz+5,11,4.2,.18,wall);
  box(ix-5.5,2.1,iz, .18,4.2,10,wall);box(ix+5.5,2.1,iz, .18,4.2,10,wall);
