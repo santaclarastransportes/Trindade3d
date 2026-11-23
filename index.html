@@ -158,7 +158,7 @@ function loadThreeEngine(){
  return new Promise((resolve,reject)=>{let i=0;const next=()=>{if(i>=sources.length){reject(new Error('Não foi possível carregar o motor 3D. Verifique a internet ou bloqueios do navegador.'));return;}const sc=document.createElement('script');sc.src=sources[i++];sc.onload=()=>window.THREE?resolve():next();sc.onerror=next;document.head.appendChild(sc)};next()});
 }
 function showStartupError(message){const box=document.createElement('div');box.style.cssText='position:absolute;z-index:50;left:50%;top:50%;transform:translate(-50%,-50%);width:min(90%,420px);padding:20px;border-radius:18px;background:#102337;color:white;border:1px solid #ffffff55;box-shadow:0 15px 45px #0008;text-align:center;font:14px system-ui';const h=document.createElement('h2');h.textContent='Não foi possível abrir o mapa 3D';const p=document.createElement('p');p.textContent=message;const b=document.createElement('button');b.textContent='Tentar novamente';b.onclick=()=>location.reload();box.append(h,p,b);document.body.appendChild(box)}
-loadThreeEngine().then(()=>new Promise((resolve,reject)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/loaders/GLTFLoader.js';s.onload=()=>resolve();s.onerror=()=>reject(new Error('Não foi possível carregar o carregador de modelos 3D.'));document.head.appendChild(s)})).then(()=>startGame()).catch(e=>showStartupError(e.message));
+loadThreeEngine().then(()=>startGame()).catch(e=>showStartupError(e.message));
 function startGame(){'use strict';
 const $=id=>document.getElementById(id), toast=t=>{const el=$('toast');el.textContent=t;el.style.display='block';clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.style.display='none',2800)};
 const isTouch=matchMedia('(pointer:coarse)').matches;
@@ -240,17 +240,21 @@ function createMonza(x,z){
  g.position.set(x,0,z);g.userData.vehicle=true;scene.add(g);return g;
 }
 function createPoliceCar(x,z){
- const group=new THREE.Group();group.position.set(x,0,z);group.userData.vehicle=true;scene.add(group);
- const bytes=Uint8Array.from(atob(POLICE_CAR_GLB_BASE64),c=>c.charCodeAt(0));
- const loader=new THREE.GLTFLoader();
- loader.parse(bytes.buffer,'',gltf=>{
-  const model=gltf.scene;
-  model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});
-  const box=new THREE.Box3().setFromObject(model),center=box.getCenter(new THREE.Vector3());
-  model.position.sub(center);model.position.y-=box.min.y;
-  group.add(model);
- },err=>console.error('Falha ao carregar a viatura 3D:',err));
- return group;
+ const g=createMonza(x,z);
+ g.userData.policeVehicle=true;
+ const blue=new THREE.MeshBasicMaterial({color:0x1677ff});
+ const red=new THREE.MeshBasicMaterial({color:0xff2638});
+ const dark=new THREE.MeshStandardMaterial({color:0x101820,roughness:.55});
+ const bar=new THREE.Mesh(new THREE.BoxGeometry(.9,.12,.24),dark);
+ bar.position.set(0,1.48,0);g.add(bar);
+ const lampB=new THREE.Mesh(new THREE.BoxGeometry(.36,.13,.22),blue);
+ lampB.position.set(-.23,1.5,0);g.add(lampB);
+ const lampR=new THREE.Mesh(new THREE.BoxGeometry(.36,.13,.22),red);
+ lampR.position.set(.23,1.5,0);g.add(lampR);
+ const stripeMat=new THREE.MeshStandardMaterial({color:0x123d78,roughness:.6});
+ const stripe=new THREE.Mesh(new THREE.BoxGeometry(1.72,.16,.025),stripeMat);
+ stripe.position.set(0,.78,.91);g.add(stripe);
+ return g;
 }
 function boxCar(g,x,y,z,w,h,d,color){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(color,.45));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;g.add(m);return m}
 function removeMonza(){if(monza){scene.remove(monza);monza=null;drivingCar=false;player.visible=true}}
