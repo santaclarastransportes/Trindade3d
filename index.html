@@ -337,29 +337,30 @@ function animate(){
  // Pedestre: movimento relativo à câmera. Carro: física com aceleração, freio, ré e esterçamento.
  let tx=(cy*ix+sy*iz)*maxSp,tz=(-sy*ix+cy*iz)*maxSp;
  if(drivingCar&&monza){
-   const throttle=carInput.throttle?1:0,brake=carInput.brake?1:0,steer=(carInput.right?1:0)-(carInput.left?1:0);
-   // Professional arcade vehicle dynamics: longitudinal acceleration, engine drag,
-   // progressive steering, front-wheel angle, and tire-grip correction.
-   const absSpeed=Math.abs(carSpeed);
-   if(throttle)carSpeed=Math.min(24,carSpeed+8.0*dt);
-   if(brake){if(carSpeed>0)carSpeed=Math.max(0,carSpeed-16*dt);else carSpeed=Math.max(-6,carSpeed-4.5*dt);}
-   if(!throttle&&!brake){const drag=1.15+absSpeed*.055;carSpeed*=Math.exp(-drag*dt);}
-   if(Math.abs(carSpeed)<.025)carSpeed=0;
-   const speedBlend=Math.min(absSpeed/16,1);
-   const steerAngle=steer*(.48-.19*speedBlend);
+   const throttle=carInput.throttle?1:0,brake=carInput.brake?1:0;
+   const steer=(carInput.right?1:0)-(carInput.left?1:0);
+   // Longitudinal-only arcade physics: no lateral velocity component is generated.
+   const oldSpeed=Math.abs(carSpeed);
+   if(throttle)carSpeed=Math.min(22,carSpeed+7.2*dt);
+   if(brake){if(carSpeed>0)carSpeed=Math.max(0,carSpeed-15*dt);else carSpeed=Math.max(-5,carSpeed-4*dt);}
+   if(!throttle&&!brake)carSpeed*=Math.exp(-(1.35+oldSpeed*.035)*dt);
+   if(Math.abs(carSpeed)<.03)carSpeed=0;
+   // Wheel angle is progressive and reduced at speed. Model nose is local -Z.
+   const speedRatio=Math.min(Math.abs(carSpeed)/18,1);
+   const steerAngle=steer*(.43-.17*speedRatio);
    if(monza.userData.wheels)monza.userData.wheels.forEach(w=>{if(w.front)w.group.rotation.y=steerAngle;});
+   // Bicycle model: heading changes only from steering, reversing flips turn direction.
    const wheelBase=2.65;
-   let yawRate=(Math.abs(carSpeed)>.12)?(carSpeed/wheelBase)*Math.tan(steerAngle):0;
-   yawRate=Math.max(-.95,Math.min(.95,yawRate));
-   if(steer!==0&&Math.abs(carSpeed)>.12)monza.rotation.y+=yawRate*dt;
-   const grip=Math.exp(-Math.min(9,5.5+absSpeed*.12)*dt);
-   carLateral*=grip;
-   const forwardX=Math.sin(monza.rotation.y)*carSpeed,forwardZ=-Math.cos(monza.rotation.y)*carSpeed;
-   const sideX=Math.cos(monza.rotation.y)*carLateral,sideZ=Math.sin(monza.rotation.y)*carLateral;
-   tx=forwardX+sideX;tz=forwardZ+sideZ;vel.x=tx;vel.z=tz;
-}
+   const yawRate=(Math.abs(carSpeed)>.18)?(carSpeed/wheelBase)*Math.tan(steerAngle):0;
+   monza.rotation.y+=yawRate*dt;
+   // The vehicle's velocity is always along its nose direction—never sideways.
+   tx=Math.sin(monza.rotation.y)*carSpeed;
+   tz=-Math.cos(monza.rotation.y)*carSpeed;
+   vel.x=tx;vel.z=tz;
+   carLateral=0;
+ }
  else{const acc=1-Math.exp(-dt*(len>0?11:14));if(spec){specVel.x+=(tx-specVel.x)*acc;specVel.z+=(tz-specVel.z)*acc;specPos.x+=specVel.x*dt;specPos.z+=specVel.z*dt;specPos.y=clamp(specPos.y+(specY+((keys.e?1:0)-(keys.q?1:0)))*clamp(specPos.y,6,60)*1.2*dt,2,150);vel.x+=(0-vel.x)*acc;vel.z+=(0-vel.z)*acc}else{vel.x+=(tx-vel.x)*acc;vel.z+=(tz-vel.z)*acc}}
- if(drivingCar&&monza){const nx=monza.position.x+vel.x*dt,nz=monza.position.z+vel.z*dt;if(!collidesWithBuild(nx,nz)){monza.position.x=nx;monza.position.z=nz;}else{carSpeed*=.22;vel.x=vel.z=0;}player.position.copy(monza.position);player.rotation.copy(monza.rotation)}else if(!spec)movePlayerWithCollision(vel.x*dt,vel.z*dt);else{specPos.x+=specVel.x*dt;specPos.z+=specVel.z*dt;}const fo=spec?specPos:player.position,gx=Math.round(fo.x/4)*4,gz=Math.round(fo.z/4)*4;groundMesh.position.set(gx,0,gz);sunLight.position.set(gx-45,75,gz+35);sunLight.target.position.set(gx,0,gz);
+ if(drivingCar&&monza){const nx=monza.position.x+vel.x*dt,nz=monza.position.z+vel.z*dt;if(!collidesWithBuild(nx,monza.position.z))monza.position.x=nx;else carSpeed*=.3;if(!collidesWithBuild(monza.position.x,nz))monza.position.z=nz;else carSpeed*=.3;player.position.copy(monza.position);player.rotation.copy(monza.rotation)}else if(!spec)movePlayerWithCollision(vel.x*dt,vel.z*dt);else{specPos.x+=specVel.x*dt;specPos.z+=specVel.z*dt;}const fo=spec?specPos:player.position,gx=Math.round(fo.x/4)*4,gz=Math.round(fo.z/4)*4;groundMesh.position.set(gx,0,gz);sunLight.position.set(gx-45,75,gz+35);sunLight.target.position.set(gx,0,gz);
  const sp=Math.hypot(vel.x,vel.z);
  if(sp>.2){let d=Math.atan2(vel.x,vel.z)-player.rotation.y;d=Math.atan2(Math.sin(d),Math.cos(d));player.rotation.y+=d*(1-Math.exp(-dt*13))}
  // animação proporcional à velocidade
