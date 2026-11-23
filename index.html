@@ -447,7 +447,17 @@ function refreshAvatar(){if(!player)return;const pos=player.position.clone(),ry=
 // Câmera orbital em volta do jogador (arrastar = olhar ao redor)
 function updateCamera(dt){
  const k=1-Math.exp(-dt*14);
- const fx=drivingCar&&monza?monza.position.x:spec?specPos.x:player.position.x,fz=drivingCar&&monza?monza.position.z:spec?specPos.z:player.position.z,fy=drivingCar&&monza?1.2:spec?specPos.y:1.7;camTarget.x+=(fx-camTarget.x)*k;camTarget.z+=(fz-camTarget.z)*k;camTarget.y+=(fy-camTarget.y)*k;
+ // Ao dirigir, câmera fixa atrás do carro, olhando sempre para a frente.
+ // Não usa camYaw/camPitch do modo a pé: acompanha apenas a rotação do veículo.
+ if(drivingCar&&monza){
+   const forward=new THREE.Vector3(0,0,-1).applyQuaternion(monza.quaternion).normalize();
+   const desiredPos=monza.position.clone().addScaledVector(forward,-10.5);desiredPos.y+=4.4;
+   const lookTarget=monza.position.clone().addScaledVector(forward,8);lookTarget.y+=1.25;
+   camera.position.lerp(desiredPos,1-Math.exp(-dt*7));
+   camera.lookAt(lookTarget);
+   return;
+ }
+ const fx=spec?specPos.x:player.position.x,fz=spec?specPos.z:player.position.z,fy=spec?specPos.y:1.7;camTarget.x+=(fx-camTarget.x)*k;camTarget.z+=(fz-camTarget.z)*k;camTarget.y+=(fy-camTarget.y)*k;
  const cp=Math.cos(camPitch);
  camera.position.set(camTarget.x+Math.sin(camYaw)*cp*camDist,camTarget.y+Math.sin(camPitch)*camDist,camTarget.z+Math.cos(camYaw)*cp*camDist);
  camera.lookAt(camTarget.x,camTarget.y,camTarget.z);
@@ -645,7 +655,7 @@ $('chatForm').addEventListener('submit',async e=>{e.preventDefault();const input
 
 function loadScript(src){return new Promise((res,rej)=>{let s=document.createElement('script');s.src=src;s.onload=()=>{clearTimeout(t);res()};s.onerror=()=>{clearTimeout(t);rej(Error('Falha ao carregar Firebase ('+src.split('/').slice(-2).join('/')+'). Verifique a internet.'))};let t=setTimeout(()=>{s.remove();rej(Error('Tempo esgotado ao carregar Firebase. Verifique internet ou bloqueio do navegador.'))},15000);document.head.appendChild(s)})}
 function open(id){$(id).classList.add('open')}document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$(b.dataset.close).classList.remove('open'));
-$('buyBtn').onclick=buyProperty;$('buyMonza').onclick=()=>{if(hasMonza){toast('Você já possui o Monza!');return}hasMonza=true;localStorage.setItem('trindade_has_monza','1');$('dealerModal').classList.remove('open');spawnCar('monza');toast('Monza adquirido por 0 STACOINS!');};$('buyPolice').onclick=()=>{if(hasPolice){toast('Você já possui a viatura!');return}hasPolice=true;localStorage.setItem('trindade_has_police','1');$('dealerModal').classList.remove('open');spawnCar('police');checkNearby();toast('Viatura policial adquirida por 0 STACOINS! Ela está ao seu lado.');};$('enterBtn').onclick=()=>{if(monza&&(hasMonza||hasPolice)&&Math.hypot(monza.position.x-player.position.x,monza.position.z-player.position.z)<5){drivingCar=true;document.body.classList.add('driving');carSpeed=0;vel.x=vel.z=0;player.visible=false;camDist=10;toast(monza.userData.policeVehicle?'Você entrou na viatura. Use os botões de direção, acelerar e frear.':'Você entrou no Monza. Use os botões de direção, acelerar e frear.');return}if(nearProp&&nearProp.building&&nearProp.ownerUid===uid&&!nearProp.locked)enterHouse(nearProp);else toast('Você precisa ser proprietário e destrancar a porta.')};$('actBtn').onclick=()=>{if(drivingCar){stopSirenSound();if(monza&&monza.userData.policeVehicle)monza.userData.sirenOn=false;$('sirenBtn').classList.remove('siren-on');$('sirenBtn').querySelector('small').textContent='GIROFLEX OFF';drivingCar=false;stopEngineAudio();document.body.classList.remove('driving');carSpeed=0;for(const k in carInput)carInput[k]=false;document.querySelectorAll('[data-car-control]').forEach(b=>b.classList.remove('active'));player.visible=true;player.position.set(monza.position.x+2,0,monza.position.z);vel.x=vel.z=0;toast('Você saiu do veículo.');return}if(nearDealer){$('dealerModal').classList.add('open');return}if(insideHouse){exitHouse();return}if(!nearProp)return;if(nearProp.building){if(!nearProp.ownerUid){showProperty(nearProp,true);return}if(nearProp.ownerUid===uid){nearProp.locked=!nearProp.locked;const status=nearProp.locked?'trancada':'destrancada';if(firebaseOn&&db)db.ref('trindade/properties/'+nearProp.id).update({locked:nearProp.locked}).catch(e=>toast('Falha ao salvar fechadura: '+e.message));toast('Porta '+status+'.');renderProperties();return}if(nearProp.locked){toast('Esta casa está trancada pelo proprietário.');return}enterHouse(nearProp);return}showProperty(nearProp,true)};
+$('buyBtn').onclick=buyProperty;$('buyMonza').onclick=()=>{if(hasMonza){toast('Você já possui o Monza!');return}hasMonza=true;localStorage.setItem('trindade_has_monza','1');$('dealerModal').classList.remove('open');spawnCar('monza');toast('Monza adquirido por 0 STACOINS!');};$('buyPolice').onclick=()=>{if(hasPolice){toast('Você já possui a viatura!');return}hasPolice=true;localStorage.setItem('trindade_has_police','1');$('dealerModal').classList.remove('open');spawnCar('police');checkNearby();toast('Viatura policial adquirida por 0 STACOINS! Ela está ao seu lado.');};$('enterBtn').onclick=()=>{if(monza&&(hasMonza||hasPolice)&&Math.hypot(monza.position.x-player.position.x,monza.position.z-player.position.z)<5){drivingCar=true;document.body.classList.add('driving');carSpeed=0;vel.x=vel.z=0;player.visible=false;camDist=10;camYaw=0;camPitch=.32;toast(monza.userData.policeVehicle?'Você entrou na viatura. Use os botões de direção, acelerar e frear.':'Você entrou no Monza. Use os botões de direção, acelerar e frear.');return}if(nearProp&&nearProp.building&&nearProp.ownerUid===uid&&!nearProp.locked)enterHouse(nearProp);else toast('Você precisa ser proprietário e destrancar a porta.')};$('actBtn').onclick=()=>{if(drivingCar){stopSirenSound();if(monza&&monza.userData.policeVehicle)monza.userData.sirenOn=false;$('sirenBtn').classList.remove('siren-on');$('sirenBtn').querySelector('small').textContent='GIROFLEX OFF';drivingCar=false;stopEngineAudio();document.body.classList.remove('driving');carSpeed=0;for(const k in carInput)carInput[k]=false;document.querySelectorAll('[data-car-control]').forEach(b=>b.classList.remove('active'));player.visible=true;player.position.set(monza.position.x+2,0,monza.position.z);vel.x=vel.z=0;toast('Você saiu do veículo.');return}if(nearDealer){$('dealerModal').classList.add('open');return}if(insideHouse){exitHouse();return}if(!nearProp)return;if(nearProp.building){if(!nearProp.ownerUid){showProperty(nearProp,true);return}if(nearProp.ownerUid===uid){nearProp.locked=!nearProp.locked;const status=nearProp.locked?'trancada':'destrancada';if(firebaseOn&&db)db.ref('trindade/properties/'+nearProp.id).update({locked:nearProp.locked}).catch(e=>toast('Falha ao salvar fechadura: '+e.message));toast('Porta '+status+'.');renderProperties();return}if(nearProp.locked){toast('Esta casa está trancada pelo proprietário.');return}enterHouse(nearProp);return}showProperty(nearProp,true)};
 $('propertiesBtn').onclick=()=>{renderProperties();open('propertiesModal')};$('myHomeBtn').onclick=()=>{renderProperties();$('propertyList').querySelectorAll('.property-card').forEach((el,i)=>{if(properties[i].ownerUid!==uid)el.style.display='none'});open('propertiesModal')};
 $('customBtn').onclick=$('customNav').onclick=()=>{ $('nameInput').value=appearance.name;open('customModal')};
 
@@ -700,14 +710,14 @@ joy.addEventListener('pointerup',joyEnd);joy.addEventListener('pointercancel',jo
 const gameEl=$('game'),looks=new Map();let pinch0=0;
 const pinchDist=()=>{const a=[...looks.values()];return Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)};
 gameEl.addEventListener('pointerdown',e=>{if(e.target!==renderer.domElement)return;if(e.pointerType==='mouse'&&e.button!==0)return;looks.set(e.pointerId,{x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY,moved:false,t:performance.now()});try{renderer.domElement.setPointerCapture(e.pointerId)}catch(_){}$('lookHint').style.opacity=0;if(looks.size===2){pinch0=pinchDist();looks.forEach(l=>l.moved=true)}});
-gameEl.addEventListener('pointermove',e=>{if(!looks.has(e.pointerId)){if(e.target===renderer.domElement&&e.pointerType==='mouse')buildHover(e);return}if(e.pointerType==='mouse'&&looks.size===0){buildHover(e);return}
+gameEl.addEventListener('pointermove',e=>{if(drivingCar)return;if(!looks.has(e.pointerId)){if(e.target===renderer.domElement&&e.pointerType==='mouse')buildHover(e);return}if(e.pointerType==='mouse'&&looks.size===0){buildHover(e);return}
  const l=looks.get(e.pointerId);if(!l)return;const dx=e.clientX-l.x,dy=e.clientY-l.y;l.x=e.clientX;l.y=e.clientY;
  if(Math.hypot(e.clientX-l.sx,e.clientY-l.sy)>10)l.moved=true;
  if(looks.size>=2){const d=pinchDist();if(pinch0)camDist=clamp(camDist*pinch0/d,6,spec?200:80);pinch0=d;return}
  if(!l.moved)return;const s=e.pointerType==='mouse'?.0055:.0075;camYaw-=dx*s;camPitch=clamp(camPitch+dy*s*.7,.1,1.5)});
 const lookEnd=e=>{const l=looks.get(e.pointerId);looks.delete(e.pointerId);if(e.type==='pointerup'&&l&&!l.moved&&looks.size===0&&performance.now()-l.t<700)buildTap(e);if(looks.size<2)pinch0=0};
 gameEl.addEventListener('pointerup',lookEnd);gameEl.addEventListener('pointercancel',lookEnd);
-gameEl.addEventListener('wheel',e=>{camDist=clamp(camDist+e.deltaY*.03,6,spec?200:80);e.preventDefault()},{passive:false});
+gameEl.addEventListener('wheel',e=>{if(drivingCar){e.preventDefault();return}camDist=clamp(camDist+e.deltaY*.03,6,spec?200:80);e.preventDefault()},{passive:false});
 gameEl.addEventListener('contextmenu',e=>{e.preventDefault();if(buildMode)rotateB()});
 setTimeout(()=>{const h=$('lookHint');if(h)h.style.opacity=0},6000);
 
@@ -1027,20 +1037,14 @@ function bCasaPalafita(s,preview=false){
  for(const x of [-10.5,-5.1,.2])for(const z of [-5.8,2.5])box(x,2.75,z,.34,5.5,.34,wood);
  // vigas visíveis sob a cobertura
  for(let x=-10.2;x<=.1;x+=2.5)box(x,5.08,-1.7,.16,.18,9.3,darkWood);
- // piso elevado de varanda e escada rústica
+ // varanda elevada, quintal livre e escada de alvenaria no próprio quintal
  box(-5.0,.95,-1.8,11.3,.34,9.0,0x8a755e);
- box(-5.0,.64,-6.9,4.6,.34,1.8,0x80664d);
- box(-5.0,.32,-8.0,5.0,.34,1.8,0x9a7b59);
- // mureta de pedra e pequenos degraus irregulares
- box(1.2,1.0,-5.8,.55,1.8,.65,0x786b5a);
- // objetos simples sob a casa para dar profundidade à área sombreada
- box(10.5,.75,1.8,2.0,1.3,1.4,0x5c4634);
- box(14.0,.45,2.2,1.4,.8,1.0,0x6b5139);
- // plantas junto à varanda
- for(const [x,z] of [[1.5,-7.8],[-11,4.5],[2.2,5.5]]){
-   const stem=new THREE.Mesh(new THREE.CylinderGeometry(.07,.11,.9,7),mat(0x47703a));stem.position.set(x,.55,z);add(stem);
-   for(let j=0;j<5;j++){const leaf=box(x+Math.cos(j*1.25)*.38,.95,z+Math.sin(j*1.25)*.38,.16,.65,.16,0x4f853e);leaf.rotation.z=(j-2)*.18;}
- }
+ // três degraus largos, alinhados com a varanda e apoiados no chão do quintal
+ box(-5.0,.78,-6.25,4.9,.34,1.15,0x92775b);
+ box(-5.0,.47,-7.35,4.9,.34,1.15,0x9a7b59);
+ box(-5.0,.16,-8.45,4.9,.30,1.15,0xa18462);
+ // quintal amplo e limpo, sem móveis, baldes, entulho ou objetos decorativos soltos
+ box(0,.025,0,36,.05,30,0x98764e);
 }
 function bConcessionaria(){
  // Concessionária compacta: fachada, vitrine, cobertura, placa e carros de exposição.
