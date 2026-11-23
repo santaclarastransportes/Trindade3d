@@ -219,9 +219,10 @@ function createMonza(x,z){
  rounded(1.72,.20,.13,.03,trim,0,.55,2.22);
  for(const sx of [-.64,.64]){rounded(.38,.22,.08,.025,new THREE.MeshStandardMaterial({color:0xb52b24}),sx,.78,2.23);rounded(.22,.12,.07,.02,new THREE.MeshStandardMaterial({color:0xf2b25c}),sx,.68,2.23)}
  rounded(.52,.17,.05,.02,chrome,0,.79,2.24);rounded(.26,.06,.04,.01,trim,0,.82,2.25);
- // rodas: pneu, aro metálico, cubo e raios na face externa
+ // rodas: pneu, aro metálico, cubo e raios na face externa; eixo dianteiro esterçável
+ g.userData.wheels=[];
  for(const xx of [-.94,.94])for(const zz of [-1.42,1.42]){
-  const wg=new THREE.Group();wg.position.set(xx,.43,zz);g.add(wg);
+  const wg=new THREE.Group();wg.position.set(xx,.43,zz);g.add(wg);g.userData.wheels.push({group:wg,front:zz<0});
   function wheelMesh(geo,material,x1,y1,z1){const m=new THREE.Mesh(geo,material);m.position.set(x1,y1,z1);m.castShadow=true;m.receiveShadow=true;wg.add(m);return m}
   const tire=wheelMesh(new THREE.CylinderGeometry(.39,.39,.24,32),rubber,0,0,0);tire.rotation.z=Math.PI/2;
   const rim=wheelMesh(new THREE.CylinderGeometry(.285,.285,.25,24),chrome,0,0,0);rim.rotation.z=Math.PI/2;
@@ -339,7 +340,15 @@ function animate(){
    if(throttle){carSpeed=Math.min(26,carSpeed+9.5*dt)}
    if(brake){if(carSpeed>0)carSpeed=Math.max(0,carSpeed-19*dt);else carSpeed=Math.max(-7,carSpeed-5.5*dt)}
    if(!throttle&&!brake)carSpeed*=Math.exp(-1.45*dt);
-   const steerStrength=(.25+Math.min(Math.abs(carSpeed)/18,1)*.95)*(carSpeed<0?-1:1);monza.rotation.y+=steer*steerStrength*dt;
+   // Direção automotiva: rodas dianteiras esterçam e a carroceria gira em torno do eixo traseiro.
+   const steerAngle=steer*.48; // máximo aproximado de 28 graus
+   if(monza.userData.wheels)monza.userData.wheels.forEach(w=>{if(w.front)w.group.rotation.y=steerAngle;});
+   const wheelBase=2.84;
+   const yawRate=(Math.abs(carSpeed)>0.02?(carSpeed/wheelBase)*Math.tan(steerAngle):0);
+   const rearAnchor=new THREE.Vector3(0,0,1.42).applyEuler(monza.rotation).add(monza.position);
+   monza.rotation.y+=yawRate*dt;
+   const rearOffset=new THREE.Vector3(0,0,1.42).applyEuler(monza.rotation);
+   monza.position.copy(rearAnchor).sub(rearOffset); // pivô de giro no eixo traseiro
    const forwardX=Math.sin(monza.rotation.y)*carSpeed,forwardZ=-Math.cos(monza.rotation.y)*carSpeed;
    tx=forwardX;tz=forwardZ;vel.x=tx;vel.z=tz;
  }else{const acc=1-Math.exp(-dt*(len>0?11:14));if(spec){specVel.x+=(tx-specVel.x)*acc;specVel.z+=(tz-specVel.z)*acc;specPos.x+=specVel.x*dt;specPos.z+=specVel.z*dt;specPos.y=clamp(specPos.y+(specY+((keys.e?1:0)-(keys.q?1:0)))*clamp(specPos.y,6,60)*1.2*dt,2,150);vel.x+=(0-vel.x)*acc;vel.z+=(0-vel.z)*acc}else{vel.x+=(tx-vel.x)*acc;vel.z+=(tz-vel.z)*acc}}
