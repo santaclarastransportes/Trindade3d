@@ -930,36 +930,135 @@ function bConcessionaria(){
  box(0,.15,-8,7,.3,1.4,0x68727a);box(-8,3.4,7.2,5,6.8,.4,0x505b65);box(8,3.4,7.2,5,6.8,.4,0x505b65);
 }
 function bPracaPrefeitura(){
- // Praça inspirada nas imagens enviadas: prefeitura, fonte, pergolado e playground.
- const grass=0x6b9b54,stone=0xc7c0b0,white=0xe5e7e8,wood=0x68472f;
- box(0,.08,0,78,.16,66,grass);
- // calçadas perimetrais e passeio curvo representado em trechos conectados
- box(0,.18,30,78,.24,5,0xb8b2a7);box(0,.18,-30,78,.24,5,0xb8b2a7);
- box(-36,.18,0,5,.24,56,0xb8b2a7);box(36,.18,0,5,.24,56,0xb8b2a7);
- // prefeitura municipal ao fundo
- box(0,3.2,-23,30,6.4,10,0xcbd0d4);box(0,6.5,-23,31,.35,10.8,0x697989);
- box(0,5.1,-28.12,25,1.25,.18,0x566b7b);
- const plaque=canvasTex(1024,160,(c,w,h)=>{c.fillStyle='#566b7b';c.fillRect(0,0,w,h);c.fillStyle='#fff';c.font='bold 90px Arial';c.textAlign='center';c.textBaseline='middle';c.fillText('PREFEITURA MUNICIPAL',w/2,h/2)});
- planeM(20,3.1,0,5.15,-28.25,new THREE.MeshStandardMaterial({map:plaque}));
- for(let x=-12;x<=12;x+=4){box(x,2.6,-28.2,1.7,3.6,.12,0x718b98);box(x,2.6,-28.28,1.25,3.1,.05,0x9db7c1)}
- // praça central e fonte/espelho d'água
- cyl(0,.25,0,11,11,.5,white,40);cyl(0,.48,0,9.5,9.5,.16,0x8fc8c8,40);
- cyl(0,.58,0,1.1,1.1,.2,white,24);cyl(0,1.3,0,.18,.25,1.3,0x9bbfc6,12);
- // canteiros circulares e caminhos de tijolo
- for(const [x,z] of [[-20,0],[20,0],[-17,17],[17,17]]){cyl(x,.25,z,4.2,4.2,.35,white,28);cyl(x,.48,z,3.2,3.2,.12,grass,28);tree(x,z)}
- box(-23,.23,0,3,.08,25,0xa66d55);box(23,.23,0,3,.08,25,0xa66d55);box(0,.23,18,43,.08,3,0xa66d55);
- // pergolado de madeira com trepadeiras
- for(const x of [-13,-8,-3,2,7,12])for(const z of [8,15])box(x,1.8,z,.32,3.6,.32,wood);
- box(-.5,3.5,11,27,.3,8,wood);
- for(let x=-13;x<=12;x+=2)box(x,3.75,11,.14,.14,8,0x765336);
- for(let i=0;i<7;i++)ball(-12+i*4,4.05,11,.9,0x4b8b48,1.2);
- // playground colorido
- box(-25,.22,-12,16,.18,13,0xd1c6b2);
- box(-26,2.1,-13,5,.35,5,0x2586c8);box(-26,3.5,-13,5,.25,5,0x2586c8);
- box(-28,1.4,-10,1,2.8,.35,0x9a5c36);box(-24,1.4,-10,1,2.8,.35,0x9a5c36);
- box(-20,.8,-13,8,.35,1.2,0xe54b35);box(-16,.9,-13,1.2,1.8,1.2,0x2b72bc);
- // bancos, árvores e postes
- for(const [x,z] of [[-30,20],[-25,23],[28,20],[30,-12],[14,-8],[-13,-20],[13,-20]]){tree(x,z);box(x+2,.65,z,3,.22,.8,wood);box(x+2,1.05,z+.32,3,.7,.16,wood);lamp(x-2,z)}
+ // Reprodução 3D mais fiel à praça das referências: prefeitura comprida ao fundo,
+ // espelho d'água central, pergolado à esquerda e playground à direita.
+ const grass=0x659b4d, stone=0xc9c3b5, white=0xe8e9e7, wood=0x65462f;
+ const floorMeshes=[];
+ const floorBox=(x,y,z,w,h,d,color)=>{
+   const m=box(x,y,z,w,h,d,color);m.userData.noCollide=true;floorMeshes.push(m);return m;
+ };
+ const floorCyl=(x,y,z,rt,rb,h,color,seg=48,sx=1,sz=1)=>{
+   const m=cyl(x,y,z,rt,rb,h,color,seg);m.scale.set(sx,1,sz);m.userData.noCollide=true;floorMeshes.push(m);return m;
+ };
+ // Base gramada e passeios que contornam a praça. O piso inteiro é atravessável.
+ floorBox(0,.035,0,100,.07,82,grass);
+ floorBox(0,.10,38,100,.14,5,0xb9b5a9);
+ floorBox(0,.10,-38,100,.14,5,0xb9b5a9);
+ floorBox(-48,.10,0,5,.14,72,0xb9b5a9);
+ floorBox(48,.10,0,5,.14,72,0xb9b5a9);
+ // Caminho de tijolos curvo em volta do gramado (segmentos sobrepostos e sem colisão).
+ const pathSeg=(x,z,w,d,ang=0)=>{
+   const m=floorBox(x,.17,z,w,.12,d,0x9b6551);m.rotation.y=ang;return m;
+ };
+ pathSeg(-30,5,20,3.4,-.20);pathSeg(-19,14,15,3.4,-.65);
+ pathSeg(-3,19,22,3.4,0);pathSeg(17,14,16,3.4,.55);pathSeg(30,4,18,3.4,.20);
+ pathSeg(0,-13,52,3.2,0);
+ // Prefeitura: volume comprido, baixo e cinza, como no print.
+ const buildingGroup=new THREE.Group();add(buildingGroup);
+ const prevGroup=curGroup;curGroup=buildingGroup;
+ box(0,3.35,-29,48,6.7,11,0xcbd0d3);
+ box(0,6.78,-29,49,.34,11.6,0x687989);
+ // Dois volumes frontais e entrada central recuada.
+ box(-13,3.55,-23.35,21,6.1,.28,0xbfc7cc);
+ box(13,3.55,-23.35,21,6.1,.28,0xbfc7cc);
+ box(0,2.5,-23.1,5,4.8,.45,0x8799a4);
+ // Faixa de fachada escura com inscrições grandes, em faces voltadas para a praça.
+ const makeSign=(word)=>{
+   const tex=canvasTex(1200,220,(c,w,h)=>{
+     c.fillStyle='#667b8b';c.fillRect(0,0,w,h);
+     c.fillStyle='#f7f8f8';c.font='bold 142px Arial';c.textAlign='center';c.textBaseline='middle';c.fillText(word,w/2,h/2+4);
+   });
+   const m=new THREE.Mesh(new THREE.PlaneGeometry(word==='PREFEITURA'?19:17,3.5),new THREE.MeshBasicMaterial({map:tex,side:THREE.DoubleSide}));
+   m.position.set(word==='PREFEITURA'?-12:12,5.2,-23.12);m.rotation.y=0;buildingGroup.add(m);
+ };
+ makeSign('PREFEITURA');makeSign('MUNICIPAL');
+ // Fileiras de janelas verticais e portas.
+ for(const side of [-1,1]){
+   const cx=side*13;
+   for(let i=0;i<6;i++){
+     const x=cx-side*8+i*3.0;
+     box(x,2.8,-23.08,1.65,3.35,.16,0x526d7c);
+     box(x,2.8,-22.97,1.38,3.05,.06,0x9bb9c3);
+     box(x,2.8,-22.92,.07,3.05,.035,0x526d7c);
+   }
+ }
+ box(0,1.55,-22.82,2.4,3.1,.18,0x4c6572);
+ box(0,1.55,-22.70,1.95,2.85,.06,0x9dbbc5);
+ // Estacionamento e veículos simplificados diante da prefeitura.
+ for(let i=0;i<8;i++){
+   const x=-31+i*8.8;
+   floorBox(x,.17,-17,5.8,.12,2.4,0x777d80);
+   const car=new THREE.Group();car.position.set(x,.2,-13.8);add(car);
+   const body=new THREE.Mesh(new THREE.BoxGeometry(3.3,1.0,5.1),mat([0xe6e8e8,0x303b43,0x9b3030,0xb9c4cc][i%4]));body.position.y=.7;car.add(body);
+   const cabin=new THREE.Mesh(new THREE.BoxGeometry(2.6,.9,2.5),mat(0x6e8b99));cabin.position.set(0,1.55,-.2);car.add(cabin);
+   car.traverse(o=>{if(o.isMesh){o.castShadow=true;o.userData.noCollide=true}});
+ }
+ curGroup=prevGroup;
+ // Grande fonte/espelho d'água oval no centro. A água é visivelmente azul-esverdeada.
+ floorCyl(0,.20,1,15.5,15.5,.34,white,64,1.22,.78);
+ floorCyl(0,.40,1,14.7,14.7,.10,0x8b9997,64,1.22,.78);
+ const waterMat=new THREE.MeshPhysicalMaterial({color:0x72c6cf,roughness:.16,metalness:.12,transparent:true,opacity:.88,clearcoat:1,clearcoatRoughness:.08,side:THREE.DoubleSide});
+ const water=new THREE.Mesh(new THREE.CircleGeometry(14.1,64),waterMat);
+ water.rotation.x=-Math.PI/2;water.position.set(0,.49,1);water.scale.set(1.22,.78,1);water.userData.noCollide=true;add(water);
+ // Borda interna branca e pequenos anéis de ondulação sobre a água.
+ const rippleMat=new THREE.MeshBasicMaterial({color:0xd7ffff,transparent:true,opacity:.36,side:THREE.DoubleSide});
+ for(let i=0;i<3;i++){
+   const ring=new THREE.Mesh(new THREE.RingGeometry(2.2+i*2.2,2.28+i*2.2,64),rippleMat);
+   ring.rotation.x=-Math.PI/2;ring.position.set(0,.505+i*.002,1);ring.scale.set(1.22,.78,1);ring.userData.noCollide=true;add(ring);
+ }
+ // Jato central discreto da fonte.
+ floorCyl(0,.66,1,.72,.72,.18,white,32);
+ const jet=new THREE.Mesh(new THREE.CylinderGeometry(.10,.18,2.1,16),new THREE.MeshStandardMaterial({color:0x9bdce4,transparent:true,opacity:.72,roughness:.12}));
+ jet.position.set(0,1.72,1);jet.userData.noCollide=true;add(jet);
+ const spray=new THREE.Mesh(new THREE.SphereGeometry(.48,16,10),new THREE.MeshBasicMaterial({color:0xbceff2,transparent:true,opacity:.55}));
+ spray.position.set(0,2.75,1);spray.scale.y=1.6;spray.userData.noCollide=true;add(spray);
+ // Canteiros circulares brancos com grama e arbustos.
+ for(const [x,z] of [[-31,2],[31,2],[-26,27],[26,27]]){
+   floorCyl(x,.23,z,5.2,5.2,.36,white,40);
+   floorCyl(x,.43,z,4.35,4.35,.10,grass,40);
+   tree(x,z);
+ }
+ // Pergolado de madeira à esquerda, com cobertura verde abundante e bancos.
+ for(const x of [-43,-37,-31,-25,-19])for(const z of [9,17,25]){
+   box(x,2.0,z,.42,4,.42,wood);
+ }
+ box(-31,4.05,17,25,.42,19,wood);
+ for(let x=-43;x<=-19;x+=2)box(x,4.32,17,.16,.18,19,0x765336);
+ for(let i=0;i<11;i++){
+   const x=-42+(i%6)*4.1,z=10+Math.floor(i/6)*10;
+   ball(x,4.55,z,1.35,0x438447,1.0);
+   ball(x+.7,4.7,z+.8,.9,0x568f4c,1.0);
+ }
+ for(const z of [12,22])box(-31,.62,z,5,.22,.8,0x674a34);
+ // Playground à direita, com piso emborrachado, torre, telhado e escorregador laranja.
+ floorBox(32,.18,17,25,.18,19,0xd1c5b2);
+ floorBox(32,.29,17,22,.10,16,0x9b9b8d);
+ // Torre colorida.
+ box(27,2.0,14,5.2,.35,5.2,0x2585b9);
+ box(27,3.5,14,5.8,.28,5.8,0x2585b9);
+ for(const x of [24.8,29.2])for(const z of [11.8,16.2])box(x,1.65,z,.35,3.3,.35,0x765036);
+ const roof=new THREE.Mesh(new THREE.ConeGeometry(4.2,1.8,4),mat(0x348fd0));roof.position.set(27,4.75,14);roof.rotation.y=Math.PI/4;roof.castShadow=true;add(roof);
+ box(27,1.25,11.25,2.2,2.2,.16,0x2e9a69);
+ // Escada roxa.
+ for(let i=0;i<6;i++)box(23.3, .35+i*.35, 18.5-i*.45,2.2,.22,.75,0x7544a5);
+ // Escorregador laranja em rampa.
+ const slide=new THREE.Mesh(new THREE.BoxGeometry(2.4,.22,8),mat(0xf05b32));slide.position.set(34,1.45,16.4);slide.rotation.x=-.28;slide.castShadow=true;add(slide);
+ for(const x of [32.9,35.1])box(x,1.9,13,.18,2.5,.18,0x765036);
+ // Balanço e brinquedos menores.
+ for(const x of [39,44])box(x,2.1,22,.18,4.2,.18,0xeeeeea);
+ box(41.5,4.15,22,5.2,.18,.18,0xeeeeea);
+ for(const x of [40,43])box(x,1.4,22,.12,2.8,.12,0x3679ad);
+ // Árvores, palmeiras e bancos distribuídos como no local.
+ for(const [x,z] of [[-45,-8],[-42,32],[-12,32],[14,32],[45,4],[45,31],[12,-20],[-17,-23]]){
+   tree(x,z);
+ }
+ for(const [x,z] of [[-12,28],[13,28],[-42,-2],[43,-2]]) {
+   box(x,.65,z,3.8,.22,.8,wood);box(x,1.05,z+.32,3.8,.7,.16,wood);
+ }
+ // Tudo que é piso, água e decoração da praça pode ser atravessado.
+ // A prefeitura permanece sólida; os demais objetos decorativos não bloqueiam o jogador.
+ const root=curGroup;
+ if(root)root.traverse(o=>{if(o.isMesh&&o!==water&&o!==jet&&o!==spray&&o.parent!==buildingGroup)o.userData.noCollide=true;});
 }
 const BTYPES={
  praca_prefeitura:{n:'🏛️ Praça da Prefeitura (mapa)',snap:1,fn:bPracaPrefeitura},concessionaria:{n:'🚗 Concessionária',snap:2,fn:bConcessionaria},casa_pequena:{n:'🏠 Casa simples',snap:2,color:1,house:1,fn:bCasaPequena},casa_moderna:{n:'🏡 Casa moderna',snap:2,color:1,house:1,fn:bCasaModerna},casa_rustica:{n:'🪵 Casa rústica',snap:2,color:1,house:1,fn:bCasaRustica},casa_familia:{n:'🏘️ Casa familiar',snap:2,color:1,house:1,fn:bCasaFamilia},casa_sobrado:{n:'🏠 Sobrado',snap:2,color:1,house:1,fn:bCasaSobrado},casa_chale:{n:'🏡 Chalé',snap:2,color:1,house:1,fn:bCasaChale},
