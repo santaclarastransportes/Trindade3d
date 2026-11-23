@@ -55,7 +55,7 @@
 
 .buildpanel{bottom:66px;left:50%;transform:translateX(-50%);width:min(94vw,780px);background:#0b1724f2;border:1px solid var(--line);border-radius:16px;padding:8px;box-shadow:0 8px 28px #0006;display:none;flex-direction:column;gap:6px}
 .specctl{top:50%;right:12px;transform:translateY(-50%);display:none;flex-direction:column;gap:10px}.specctl.open{display:flex}.specctl button{width:54px;height:54px;font-size:22px;border-radius:50%;padding:0;touch-action:none}.buildpanel.open{display:flex}.brow{display:flex;gap:6px;overflow-x:auto;align-items:center;scrollbar-width:thin}
-.brow button{flex:none;padding:8px 11px;font-size:12px;white-space:nowrap}.brow button.sel{background:#16a879;outline:2px solid #fff}.brow button.danger.sel{background:#c0392b}
+.brow button{flex:none;padding:8px 11px;font-size:12px;white-space:nowrap}.brow button.sel{background:#16a879!important;outline:2px solid #fff!important;box-shadow:0 0 12px #16a87988}.brow button.danger.sel{background:#c0392b}
 .brow .lbl{flex:none;font-size:12px;color:#c1d0dc;display:flex;align-items:center;gap:6px}
 .brow .sw{width:26px;height:26px;border-radius:50%;border:2px solid #ffffff70;padding:0;flex:none}.brow .sw.sel{outline:3px solid #fff}
 .bhint{font-size:11px;color:var(--muted)}
@@ -566,7 +566,7 @@ const HOUSE_TYPES={
  casa_rustica:{label:'Casa rústica',emoji:'🪵',priceDefault:5000,color:0xc69b69},
  casa_familia:{label:'Casa familiar',emoji:'🏘️',priceDefault:12000,color:0xe9e3d7}
 };
-function buildHouseExterior(s,kind){
+function buildHouseExterior(s,kind,preview=false){
  const wall=s.color||HOUSE_TYPES[kind].color, roof=kind==='casa_rustica'?0x65432a:kind==='casa_moderna'?0x343b45:0x914b3c;
  if(kind==='casa_pequena'){
   box(0,1.7,0,9,3.4,8,wall);box(0,3.8,0,9.3,.25,8.3,0xb9b3a8);
@@ -585,6 +585,8 @@ function buildHouseExterior(s,kind){
  // Porta externa e maçaneta (fachada frontal -Z)
  box(0,1.2,-4.15,1.45,2.4,.18,0x63432f);box(.48,1.25,-4.27,.08,.08,.08,0xd7b65a);
  box(0,.12,-5.1,3.6,.24,1.4,0xb8b2a7);box(0,.1,5.1,3.6,.2,1.4,0xb8b2a7);
+ // Em pré-visualização, não cria a geometria interna distante do mapa.
+ if(preview){return;}
  // Interior oculto, construído em coordenadas virtuais afastadas do mapa principal
  const interior=new THREE.Group();interior.visible=false;interior.userData.isInterior=true;add(interior);
  const prev=curGroup;curGroup=inter;const ix=500,iz=500;
@@ -605,10 +607,10 @@ function buildHouseExterior(s,kind){
  curGroup=prev;gHouseInterior=interior;
 }
 let gHouseInterior=null;
-function bCasaPequena(s){buildHouseExterior(s,'casa_pequena')}
-function bCasaModerna(s){buildHouseExterior(s,'casa_moderna')}
-function bCasaRustica(s){buildHouseExterior(s,'casa_rustica')}
-function bCasaFamilia(s){buildHouseExterior(s,'casa_familia')}
+function bCasaPequena(s,preview=false){buildHouseExterior(s,'casa_pequena',preview)}
+function bCasaModerna(s,preview=false){buildHouseExterior(s,'casa_moderna',preview)}
+function bCasaRustica(s,preview=false){buildHouseExterior(s,'casa_rustica',preview)}
+function bCasaFamilia(s,preview=false){buildHouseExterior(s,'casa_familia',preview)}
 const BTYPES={
  casa_pequena:{n:'🏠 Casa simples',snap:2,color:1,house:1,fn:bCasaPequena},casa_moderna:{n:'🏡 Casa moderna',snap:2,color:1,house:1,fn:bCasaModerna},casa_rustica:{n:'🪵 Casa rústica',snap:2,color:1,house:1,fn:bCasaRustica},casa_familia:{n:'🏘️ Casa familiar',snap:2,color:1,house:1,fn:bCasaFamilia},
  mercado:{n:'🛒 Atacarejo Bandiera',snap:1,fn:bMercado},agrosul:{n:'🌾 AgroSul',snap:1,fn:bAgroSul},hotel:{n:'🏨 Hotel Alvorada',snap:1,fn:bHotel},casaarcos:{n:'🏡 Casa dos Arcos',snap:1,fn:bCasaArcos},placaperim:{n:'🔵 Placa Perímetro Urbano',snap:1,fn:bPlacaPerimetro},placahotel:{n:'🪧 Placa Hotel Alvorada',snap:1,fn:bPlacaHotel},casa:{n:'🏠 Casa',snap:2,color:1,fn:bCasa},predio:{n:'🏢 Prédio',snap:2,color:1,floors:1,fn:bPredio},
@@ -621,7 +623,7 @@ let bType='mercado',bDel=false,bRot=2,bColor=0xe0d3bd,bFloors=5,ghost=null,hover
 function buildObj(s,registerProperty=true){
  const g=new THREE.Group();g.userData.deletable=true;g.userData.spec=s;
  const prev=curGroup;curGroup=g;gHouseInterior=null;
- try{BTYPES[s.type].fn(s)}finally{curGroup=prev}
+ try{BTYPES[s.type].fn(s,!registerProperty)}finally{curGroup=prev}
  if(BTYPES[s.type].house&&gHouseInterior){
   g.userData.houseInterior=gHouseInterior;gHouseInterior.visible=false;
   const hid=s.houseId||('house_'+Math.round(s.x)+'_'+Math.round(s.z));s.houseId=hid;
@@ -661,7 +663,7 @@ function rotateB(){bRot=(bRot+1)%4;if(ghost)ghost.rotation.y=bRot*Math.PI/2}
 function syncUI(){const T=BTYPES[bType];$('bItems').querySelectorAll('button').forEach(b=>b.classList.toggle('sel',!bDel&&b.dataset.t===bType));$('bDelBtn').classList.toggle('sel',bDel);
  $('bFloorsBox').style.display=T.floors&&!bDel?'flex':'none';$('bColors').style.display=T.color&&!bDel?'flex':'none';$('fVal').textContent=bFloors;
  $('bColors').querySelectorAll('button').forEach(b=>b.classList.toggle('sel',+b.dataset.c===bColor))}
-Object.entries(BTYPES).forEach(([k,T])=>{const b=document.createElement('button');b.textContent=T.n;b.dataset.t=k;b.onclick=()=>{bType=k;bDel=false;tint(hoverG,false);hoverG=null;refreshGhost();syncUI()};$('bItems').appendChild(b)});
+Object.entries(BTYPES).forEach(([k,T])=>{const b=document.createElement('button');b.textContent=T.n;b.dataset.t=k;b.onclick=()=>{bType=k;bDel=false;tint(hoverG,false);hoverG=null;syncUI();refreshGhost()};$('bItems').appendChild(b)});
 BCOLORS.forEach(c=>{const b=document.createElement('button');b.className='sw';b.dataset.c=c;b.style.background='#'+c.toString(16).padStart(6,'0');b.onclick=()=>{bColor=c;refreshGhost();syncUI()};$('bColors').appendChild(b)});
 $('bDelBtn').onclick=()=>{bDel=!bDel;tint(hoverG,false);hoverG=null;refreshGhost();syncUI()};$('bRotBtn').onclick=rotateB;$('bUndoBtn').onclick=undoB;
 $('fMinus').onclick=()=>{bFloors=clamp(bFloors-1,1,30);refreshGhost();syncUI()};$('fPlus').onclick=()=>{bFloors=clamp(bFloors+1,1,30);refreshGhost();syncUI()};
