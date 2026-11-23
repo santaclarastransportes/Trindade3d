@@ -70,6 +70,15 @@
 #chatForm{display:flex;gap:6px;padding:8px;border-top:1px solid var(--line)}#chatInput{flex:1;min-width:0;padding:10px}#chatForm button{padding:10px 12px}#chatHint{font-size:10px;color:#9db0bf;padding:0 10px 7px}
 @media(pointer:coarse){#chatToggle{top:110px;right:10px;padding:8px 11px}#chatPanel{right:10px;bottom:65px;height:min(48vh,380px)}}
 
+
+/* Controles de direção do Monza */
+#carControls{position:absolute;z-index:8;right:18px;bottom:22px;display:none;gap:12px;align-items:flex-end;touch-action:none}
+#carControls.active{display:flex}
+.carPedal{white-space:pre-line;width:76px;height:82px;border-radius:18px;background:#172635dd;border:2px solid #ffffff55;color:#fff;font-weight:900;font-size:15px;box-shadow:0 5px 15px #0005;touch-action:none;user-select:none}
+.carPedal.gas{background:#168750e8}.carPedal.brake{background:#b93434e8}
+#carExit{position:absolute;z-index:8;left:50%;top:58px;transform:translateX(-50%);display:none;background:#18293a;color:white;border:1px solid #ffffff55;border-radius:14px;padding:10px 15px;font-weight:800}
+#carEnter{position:absolute;z-index:8;left:50%;top:58px;transform:translateX(-50%);background:#168750;color:white;border:1px solid #ffffff55;border-radius:14px;padding:10px 15px;font-weight:800}
+@media(pointer:coarse){#carControls{right:12px;bottom:20px;gap:8px}.carPedal{width:66px;height:76px;font-size:13px}#carExit{top:58px}}
 </style>
 </head>
 <body>
@@ -82,7 +91,7 @@
  <div class="profile-head"><div class="face" id="facePreview">🧑</div><div><div class="profile-name" id="hudName">Visitante</div><div class="sub">⭐ Nível 1 • Cidadão</div></div></div>
  <div class="profile-actions"><button id="customBtn">👕 Personalizar personagem</button><button class="secondary" id="myHomeBtn">🏠 Meus imóveis</button><button class="secondary" id="centerBtn">📍 Centralizar câmera</button></div>
 </div>
-<div class="hud help"><b>COMO JOGAR</b><br>WASD ou setas para andar. Arraste o mouse na tela para olhar ao redor, roda do mouse para zoom. No celular, use o joystick e arraste o dedo na tela para girar a câmera.</div>
+<div class="hud help"><b>COMO JOGAR</b><br>WASD ou setas para andar. Arraste a tela para olhar ao redor. Entre no Monza para dirigir: W acelera, S ré, A/D esterçam e Espaço freia. No celular, joystick vira e os botões acelerador/freio controlam o carro.</div>
 <div class="hud minimap"><canvas id="mini" width="220" height="220"></canvas></div>
 <div class="hud bottomnav"><button id="mapBtn">🗺️ Mapa</button><button id="propertiesBtn">🏘️ Imóveis</button><button id="customNav">👕 Roupas</button><button id="socialBtn">👥 Social</button><button id="buildBtn">🔨 Construir</button></div>
 <button class="act green" id="actBtn">🏠 Ver imóvel</button><button class="act green enter" id="enterBtn">🚪 Entrar na casa</button>
@@ -98,7 +107,7 @@
  </div>
  <div class="bhint">Clique/toque no chão para colocar • Botão direito ou R = girar • X = excluir • Ctrl+Z = desfazer • Arraste = olhar • Roda/pinça = zoom</div>
 </div>
-<div class="joy" id="joy"><div class="knob" id="knob"></div></div><button class="run" id="runBtn">🏃</button>
+<div class="joy" id="joy"><div class="knob" id="knob"></div></div><button class="run" id="runBtn">🏃</button><div id="carControls"><button class="carPedal brake" id="carBrake">FREIO<br>◼</button><button class="carPedal gas" id="carGas">ACELERAR<br>▲</button></div><button id="carEnter">🚗 Entrar no Monza</button><button id="carExit">🚗 Sair do Monza</button>
 <div class="lookhint" id="lookHint">👆 Arraste aqui para olhar ao redor</div>
 
 <button id="chatToggle" title="Chat">💬 Chat</button>
@@ -109,7 +118,6 @@
  <form id="chatForm"><input id="chatInput" maxlength="200" placeholder="Digite uma mensagem..." autocomplete="off"><button type="submit">Enviar</button></form>
 </div>
 
-<div class="modal" id="dealerModal"><div class="dialog"><h2>🚗 Concessionária Trindade</h2><p>Veículos disponíveis para adquirir.</p><div class="property-card"><b>Chevrolet Monza 2 portas • Branco</b><small>Modelo inicial inspirado na foto enviada</small><h3 style="margin:10px 0;color:#54e0b0">GRÁTIS — 0 STACOINS</h3><button class="green" id="buyMonza" style="width:100%">Adquirir veículo</button></div><button class="secondary" data-close="dealerModal" style="width:100%;margin-top:10px">Fechar</button></div></div>
 <div class="modal" id="housePriceModal"><div class="dialog"><h2>🏠 Definir preço da casa</h2><p>Escolha o valor de venda desta casa em STACOINS.</p><label for="housePriceInput">Preço de venda</label><input id="housePriceInput" type="number" min="0" step="1" value="2500" style="width:100%;box-sizing:border-box;padding:12px;border-radius:12px"><div class="row" style="margin-top:12px"><button class="secondary" id="housePriceCancel">Cancelar</button><button id="housePriceConfirm">Confirmar construção</button></div></div></div>
 <div class="toast" id="toast"></div>
 <div id="rotate"><div class="ph">📱</div><h2>Gire o celular</h2><p>Trindade Online funciona em tela horizontal. Vire o aparelho de lado (e desative o bloqueio de rotação, se precisar).</p><button id="rotateFs">Tela cheia / horizontal</button></div>
@@ -153,77 +161,7 @@ let spec=false,specY=0;const specPos={x:0,y:18,z:0},specVel={x:0,z:0};const joyV
 const vel={x:0,z:0};let walkPhase=0,frameN=0;
 let camYaw=0,camPitch=.5,camDist=11;const camTarget={x:START.x,y:1.6,z:START.z};
 let appearance={skin:'#f1c49a',hair:'#171717',shirt:'#171f2d',pants:'#222831',name:'Visitante'};try{const savedName=localStorage.getItem('trindade_player_name');if(savedName)appearance.name=savedName.slice(0,24)}catch(e){}
-const properties=[];const remoteHumans={};
-let monza=null,hasMonza=false,drivingCar=false,nearDealer=null;
-try{hasMonza=localStorage.getItem('trindade_has_monza')==='1'}catch(e){}
-function createMonza(x,z){
- const g=new THREE.Group();
- const paint=new THREE.MeshPhysicalMaterial({color:0xf3f3ee,metalness:.24,roughness:.28,clearcoat:.8,clearcoatRoughness:.16});
- const trim=new THREE.MeshStandardMaterial({color:0x171a1c,roughness:.65});
- const glass=new THREE.MeshPhysicalMaterial({color:0x263a46,metalness:.12,roughness:.12,transparent:true,opacity:.78,clearcoat:.8});
- const chrome=new THREE.MeshStandardMaterial({color:0xb8bec1,metalness:.85,roughness:.22});
- const rubber=new THREE.MeshStandardMaterial({color:0x111213,roughness:.92});
- const lamp=new THREE.MeshPhysicalMaterial({color:0xe9f2f7,roughness:.15,metalness:.1,clearcoat:1});
- function mesh(geo,material,x0,y0,z0){const m=new THREE.Mesh(geo,material);m.position.set(x0,y0,z0);m.castShadow=true;m.receiveShadow=true;g.add(m);return m}
- function rounded(w,h,d,r,material,x0,y0,z0){const sh=new THREE.Shape();sh.moveTo(-w/2+r,-h/2);sh.lineTo(w/2-r,-h/2);sh.quadraticCurveTo(w/2,-h/2,w/2,-h/2+r);sh.lineTo(w/2,h/2-r);sh.quadraticCurveTo(w/2,h/2,w/2-r,h/2);sh.lineTo(-w/2+r,h/2);sh.quadraticCurveTo(-w/2,h/2,-w/2,h/2-r);sh.lineTo(-w/2,-h/2+r);sh.quadraticCurveTo(-w/2,-h/2,-w/2+r,-h/2);
- const geo=new THREE.ExtrudeGeometry(sh,{depth:d,bevelEnabled:true,bevelSegments:2,steps:1,bevelSize:r*.35,bevelThickness:r*.35,curveSegments:5});geo.translate(0,0,-d/2);return mesh(geo,material,x0,y0,z0)}
- // Perfil inferior e carroceria com bordas arredondadas, dianteira em -Z
- rounded(1.84,.55,4.38,.11,paint,0,.69,0);
- rounded(1.79,.24,3.86,.08,trim,0,.43,0); // saia/para-choques inferior
- rounded(1.82,.25,.18,.055,trim,0,.53,-2.17);rounded(1.82,.25,.18,.055,trim,0,.53,2.17);
- // Capô e porta-malas, levemente curvos
- rounded(1.72,.12,1.28,.07,paint,0,.99,-1.42);rounded(1.68,.11,.88,.06,paint,0,.96,1.66);
- // cabine em forma trapezoidal, vidro e pilares
- const cabShape=new THREE.Shape();cabShape.moveTo(-1.82,.88);cabShape.lineTo(-1.30,1.60);cabShape.lineTo(-.44,1.68);cabShape.lineTo(.74,1.62);cabShape.lineTo(1.72,.91);cabShape.lineTo(1.72,.88);cabShape.closePath();
- const cabGeo=new THREE.ExtrudeGeometry(cabShape,{depth:1.48,bevelEnabled:true,bevelSize:.035,bevelThickness:.035,bevelSegments:2});cabGeo.translate(0,0,-.74);cabGeo.rotateY(Math.PI/2);cabGeo.translate(0,0,0);
- // geometry orientation adjusted: shape x is length axis, rotate to vehicle Z
- const cab=mesh(cabGeo,paint,0,0,0);cab.position.set(0,0,0);cab.visible=false;
- // cabin shell built as bevelled sections (roof, windshield/rear glass, pillars)
- rounded(1.36,.12,1.22,.06,paint,0,1.66,-.22);
- // front windshield and rear window angled panes
- const pane=(verts,material)=>{const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(verts.flat(),3));geo.setIndex([0,1,2,0,2,3]);geo.computeVertexNormals();mesh(geo,material,0,0,0)};
- pane([[-.66,1.15,-1.15],[.66,1.15,-1.15],[.60,1.57,-.68],[-.60,1.57,-.68]],glass);
- pane([[-.60,1.57,.62],[.60,1.57,.62],[.68,1.12,1.12],[-.68,1.12,1.12]],glass);
- // lateral windows and door framing on both sides
- for(const side of [-1,1]){
-  const x=side*.76;
-  pane([[x,1.12,-1.04],[x,1.52,-.61],[x,1.52,.38],[x,1.12,.40]],glass);
-  pane([[x,1.52,.43],[x,1.52,.60],[x,1.12,1.03],[x,1.12,.43]],glass);
-  // B pillar and door outlines, black window gasket
-  rounded(.055,.48,.10,.015,trim,side*.79,1.34,.40);
-  rounded(.045,.38,2.25,.012,trim,side*.91,.70,0);
-  rounded(.14,.04,.28,.02,chrome,side*.925,.91,.35); // door handle
-  rounded(.12,.18,.14,.025,trim,side*.94,1.15,-1.18); // mirror
- }
- // front/rear fascias, grille, lights, badges
- rounded(1.68,.24,.13,.035,trim,0,.55,-2.22);
- rounded(.78,.17,.055,.02,chrome,0,.78,-2.235);
- rounded(.58,.10,.06,.015,trim,0,.78,-2.25);
- for(const sx of [-.62,.62]){rounded(.38,.18,.08,.03,lamp,sx,.83,-2.23);rounded(.28,.06,.07,.02,new THREE.MeshStandardMaterial({color:0xffd9a1}),sx,.72,-2.23)}
- rounded(1.72,.20,.13,.03,trim,0,.55,2.22);
- for(const sx of [-.64,.64]){rounded(.38,.22,.08,.025,new THREE.MeshStandardMaterial({color:0xb52b24}),sx,.78,2.23);rounded(.22,.12,.07,.02,new THREE.MeshStandardMaterial({color:0xf2b25c}),sx,.68,2.23)}
- rounded(.52,.17,.05,.02,chrome,0,.79,2.24);rounded(.26,.06,.04,.01,trim,0,.82,2.25);
- // rodas: pneu, aro metálico, cubo e raios na face externa
- for(const xx of [-.94,.94])for(const zz of [-1.42,1.42]){
-  const wg=new THREE.Group();wg.position.set(xx,.43,zz);g.add(wg);
-  function wheelMesh(geo,material,x1,y1,z1){const m=new THREE.Mesh(geo,material);m.position.set(x1,y1,z1);m.castShadow=true;m.receiveShadow=true;wg.add(m);return m}
-  const tire=wheelMesh(new THREE.CylinderGeometry(.39,.39,.24,32),rubber,0,0,0);tire.rotation.z=Math.PI/2;
-  const rim=wheelMesh(new THREE.CylinderGeometry(.285,.285,.25,24),chrome,0,0,0);rim.rotation.z=Math.PI/2;
-  const inset=wheelMesh(new THREE.CylinderGeometry(.235,.235,.255,24),mat(0x7d8589,.35),0,0,0);inset.rotation.z=Math.PI/2;
-  const hub=wheelMesh(new THREE.CylinderGeometry(.09,.09,.27,16),chrome,0,0,0);hub.rotation.z=Math.PI/2;
-  // Face visible outward, 8 spoke details
-  for(let i=0;i<8;i++){const sp=wheelMesh(new THREE.BoxGeometry(.035,.32,.04),chrome,0,0,0);sp.rotation.y=i*Math.PI/4;sp.position.z=xx>0?.14:-.14;}
- }
- // interiores visíveis através dos vidros
- rounded(1.25,.16,1.9,.05,trim,0,.95,.05);rounded(.12,.5,.38,.04,trim,-.53,1.18,-.48);rounded(.12,.5,.38,.04,trim,.53,1.18,-.48);
- for(const sx of [-.38,.38]){rounded(.48,.42,.50,.08,mat(0x343a3f),sx,.95,-.35);rounded(.48,.36,.50,.08,mat(0x343a3f),sx,.88,.55)}
- rounded(.65,.08,.22,.03,trim,0,1.18,-.8);rounded(.58,.10,.08,.02,mat(0x555c61),0,1.22,-.8);
- const steering=mesh(new THREE.TorusGeometry(.22,.025,8,24),trim,-.38,1.18,-.82);steering.rotation.x=Math.PI/2;
- g.position.set(x,0,z);g.userData.vehicle=true;scene.add(g);return g;
-}
-function boxCar(g,x,y,z,w,h,d,color){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(color,.45));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;g.add(m);return m}
-function removeMonza(){if(monza){scene.remove(monza);monza=null;drivingCar=false;player.visible=true}}
-let remoteBuildIds=new Set();
+const properties=[];const remoteHumans={};let remoteBuildIds=new Set();
 let groundMesh,sunLight,buildMode=false,curGroup=null,oidN=0;const worldGroups=[];let isAdmin=false;const ADMIN_UID='bsaez769YeMzZpKDEfPm4vSBcOp2';
 const add=o=>(curGroup||scene).add(o);
 function makeWorld(){
@@ -278,7 +216,7 @@ function refreshAvatar(){if(!player)return;const pos=player.position.clone(),ry=
 // Câmera orbital em volta do jogador (arrastar = olhar ao redor)
 function updateCamera(dt){
  const k=1-Math.exp(-dt*14);
- const fx=drivingCar&&monza?monza.position.x:spec?specPos.x:player.position.x,fz=drivingCar&&monza?monza.position.z:spec?specPos.z:player.position.z,fy=drivingCar&&monza?1.2:spec?specPos.y:1.7;camTarget.x+=(fx-camTarget.x)*k;camTarget.z+=(fz-camTarget.z)*k;camTarget.y+=(fy-camTarget.y)*k;
+ const fx=spec?specPos.x:player.position.x,fz=spec?specPos.z:player.position.z,fy=spec?specPos.y:1.7;camTarget.x+=(fx-camTarget.x)*k;camTarget.z+=(fz-camTarget.z)*k;camTarget.y+=(fy-camTarget.y)*k;
  const cp=Math.cos(camPitch);
  camera.position.set(camTarget.x+Math.sin(camYaw)*cp*camDist,camTarget.y+Math.sin(camPitch)*camDist,camTarget.z+Math.cos(camYaw)*cp*camDist);
  camera.lookAt(camTarget.x,camTarget.y,camTarget.z);
@@ -311,24 +249,68 @@ function collidesWithInteriorWalls(px,pz){
  return false;
 }
 function movePlayerWithCollision(dx,dz){const oldX=player.position.x,oldZ=player.position.z;const nextX=oldX+dx;if(!collidesWithBuild(nextX,oldZ))player.position.x=nextX;else vel.x=0;const nextZ=oldZ+dz;if(!collidesWithBuild(player.position.x,nextZ))player.position.z=nextZ;else vel.z=0;}
+// Monza clássico dirigível: carroceria quadrada anos 80 com detalhes e rodas animadas.
+let driveMode=false,driveSpeed=0,driveSteer=0,gasHeld=false,brakeHeld=false,driveYaw=0;
+const carWheels=[];
+function carMeshBox(g,x,y,z,w,h,d,color,rough=.62){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),new THREE.MeshStandardMaterial({color,roughness:rough,metalness:.15}));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;g.add(m);return m}
+function buildMonza(){const g=new THREE.Group();const paint=new THREE.MeshStandardMaterial({color:0x263f70,roughness:.27,metalness:.45});
+ // chassis / body sections
+ carMeshBox(g,0,.62,0,1.82,.52,4.25,0x263f70,.3);carMeshBox(g,0,.92,-.15,1.78,.42,3.95,0x263f70,.3);
+ carMeshBox(g,0,1.17,-.65,1.55,.52,1.62,0x263f70,.3);carMeshBox(g,0,1.17,1.0,1.72,.4,1.15,0x263f70,.3);
+ // hood/trunk, roof, pillars, glass
+ carMeshBox(g,0,1.1,-1.42,1.66,.16,1.12,0x234071,.3);carMeshBox(g,0,1.05,1.68,1.68,.18,.86,0x234071,.3);
+ carMeshBox(g,0,1.55,-.6,1.36,.18,1.7,0x1d355e,.35);carMeshBox(g,0,1.5,.48,1.34,.15,.58,0x1d355e,.35);
+ const glass=new THREE.MeshStandardMaterial({color:0x253741,roughness:.15,metalness:.25});
+ carMeshBox(g,0,1.36,-1.03,1.42,.36,.12,0x7e9ba9,.25);carMeshBox(g,0,1.36,.94,1.42,.32,.12,0x7e9ba9,.25);
+ carMeshBox(g,-.77,1.37,-.1,.08,.35,1.15,0x202b32);carMeshBox(g,.77,1.37,-.1,.08,.35,1.15,0x202b32);
+ // windows panels
+ carMeshBox(g,-.72,1.46,-.6,.07,.29,.55,0x477284,.18);carMeshBox(g,.72,1.46,-.6,.07,.29,.55,0x477284,.18);
+ carMeshBox(g,-.72,1.46,.45,.07,.29,.48,0x477284,.18);carMeshBox(g,.72,1.46,.45,.07,.29,.48,0x477284,.18);
+ // front grille and lights (front is -Z)
+ carMeshBox(g,0,.62,-2.14,1.36,.22,.08,0x16191c);carMeshBox(g,0,.64,-2.2,.42,.3,.05,0x151515);
+ [-.64,.64].forEach(x=>{carMeshBox(g,x,.78,-2.17,.42,.22,.08,0xe8e3c9);carMeshBox(g,x,.43,-2.17,.38,.13,.07,0xb92d25);carMeshBox(g,x,.76,2.13,.42,.23,.07,0xb51f24)});
+ // bumpers, mirrors, trim
+ carMeshBox(g,0,.4,-2.22,1.9,.18,.16,0x999b9c,.35);carMeshBox(g,0,.4,2.22,1.9,.18,.16,0x999b9c,.35);
+ [-.98,.98].forEach(x=>carMeshBox(g,x,1.25,-.55,.17,.14,.32,0x171b20));
+ // wheels with rims; cylinders axis across car
+ for(const x of [-.96,.96])for(const z of [-1.35,1.35]){const tire=new THREE.Mesh(new THREE.CylinderGeometry(.37,.37,.24,20),new THREE.MeshStandardMaterial({color:0x141414,roughness:.88}));tire.rotation.z=Math.PI/2;tire.position.set(x,.38,z);tire.castShadow=true;g.add(tire);const rim=new THREE.Mesh(new THREE.CylinderGeometry(.23,.23,.25,12),new THREE.MeshStandardMaterial({color:0xadb5bc,metalness:.65,roughness:.3}));rim.rotation.z=Math.PI/2;rim.position.set(x,.38,z);g.add(rim);carWheels.push(tire,rim)}
+ // details: windshield wipers, handles, plate
+ carMeshBox(g,0,.47,-2.25,.42,.1,.04,0xffffff);carMeshBox(g,0,.47,2.25,.42,.1,.04,0xffffff);
+ [-.82,.82].forEach(x=>carMeshBox(g,x,1.12,.02,.13,.07,.22,0xc2c5c8));
+ g.position.set(START.x+3,0,START.z+8);g.rotation.y=0;add(g);return g}
+const monza=buildMonza();
+function toggleDrive(){driveMode=!driveMode;if(driveMode){player.visible=false;driveYaw=monza.rotation.y;driveSpeed=0;vel.x=vel.z=0;camDist=8;$('carControls').classList.add('active');$('carExit').style.display='block';$('carEnter').style.display='none';$('runBtn').style.display='none';toast('Você entrou no Monza. Use WASD/setas ou joystick + acelerador/freio.')}else{player.visible=true;player.position.set(monza.position.x+2,0,monza.position.z+1.5);player.rotation.y=monza.rotation.y;driveSpeed=0;$('carControls').classList.remove('active');$('carExit').style.display='none';$('carEnter').style.display='block';$('runBtn').style.display='';toast('Você saiu do Monza.')}}
+$('carEnter').onclick=toggleDrive;$('carExit').onclick=toggleDrive;
+function pedalBind(id,which){const b=$(id),set=v=>{if(which==='gas')gasHeld=v;else brakeHeld=v};b.addEventListener('pointerdown',e=>{b.setPointerCapture(e.pointerId);set(true);e.preventDefault()});b.addEventListener('pointerup',()=>set(false));b.addEventListener('pointercancel',()=>set(false));b.addEventListener('lostpointercapture',()=>set(false))}
+pedalBind('carGas','gas');pedalBind('carBrake','brake');
+function driveTick(dt){let throttle=gasHeld?1:0,braking=brakeHeld?1:0,steer=0;
+ if(!isTouch){throttle=(keys.w||keys.arrowup?1:0)-(keys.s||keys.arrowdown?1:0);braking=(keys.space?1:0);steer=(keys.a||keys.arrowleft?1:0)-(keys.d||keys.arrowright?1:0)}else{steer=joyVec.x;throttle=gasHeld?1:0;braking=brakeHeld?1:0}
+ if(throttle>0)driveSpeed+=12*throttle*dt;else if(throttle<0)driveSpeed-=8*dt;else driveSpeed*=Math.exp(-.9*dt);
+ if(braking)driveSpeed*=Math.exp(-5.2*dt);driveSpeed=clamp(driveSpeed,-7,28);
+ const speedFactor=Math.min(1,Math.abs(driveSpeed)/5);driveSteer+=(steer-driveSteer)*(1-Math.exp(-dt*8));driveYaw+=driveSteer*speedFactor*(driveSpeed>=0?1:-1)*1.25*dt;
+ const dx=Math.sin(driveYaw)*driveSpeed*dt,dz=Math.cos(driveYaw)*driveSpeed*dt;
+ const nx=monza.position.x+dx,nz=monza.position.z+dz;
+ if(typeof collidesWithBuild==='function'&&collidesWithBuild(nx,nz)){driveSpeed*=.25}else{monza.position.x=nx;monza.position.z=nz}
+ monza.rotation.y=driveYaw;const sp=Math.abs(driveSpeed);const wheelRot=driveSpeed*dt/.37;carWheels.forEach(w=>{w.rotation.x+=wheelRot});
+ camTarget.x+=(monza.position.x-camTarget.x)*(1-Math.exp(-dt*6));camTarget.z+=(monza.position.z-camTarget.z)*(1-Math.exp(-dt*6));camTarget.y+=(1.15-camTarget.y)*(1-Math.exp(-dt*6));
+ const cp=Math.cos(camPitch),dist=camDist;camera.position.set(camTarget.x-Math.sin(driveYaw)*dist*cp,camTarget.y+Math.sin(camPitch)*dist,camera.position.z);camera.position.z=camTarget.z-Math.cos(driveYaw)*dist*cp;camera.lookAt(monza.position.x,1.2,monza.position.z);
+ $('carGas').textContent='ACELERAR\n'+Math.round(sp*3.6)+' km/h';}
 function animate(){
  requestAnimationFrame(animate);
  const dt=Math.min(clock.getDelta(),.05);
- // entrada combinada (joystick + teclado)
+ if(driveMode){driveTick(dt);const fo=monza.position,gx=Math.round(fo.x/4)*4,gz=Math.round(fo.z/4)*4;groundMesh.position.set(gx,0,gz);sunLight.position.set(gx-45,75,gz+35);sunLight.target.position.set(gx,0,gz);}
+ else{
+ // Entrada de movimento com aceleração gradual e desaceleração natural
  let ix=joyVec.x+keyVec.x,iz=joyVec.z+keyVec.z;let len=Math.hypot(ix,iz);if(len>1){ix/=len;iz/=len;len=1}
- const sy=Math.sin(camYaw),cy=Math.cos(camYaw),maxSp=drivingCar?(running?30:17):spec?(running?90:34)*(1+specPos.y/22):(running?8.2:4.6)*(buildMode?3:1);
- // direção relativa à câmera: frente = (-sin, -cos), direita = (cos, -sin)
+ const sy=Math.sin(camYaw),cy=Math.cos(camYaw),maxSp=spec?(running?90:34)*(1+specPos.y/22):(running?7.2:3.8)*(buildMode?2.5:1);
  const tx=(cy*ix+sy*iz)*maxSp,tz=(-sy*ix+cy*iz)*maxSp;
- const acc=1-Math.exp(-dt*(len>0?11:14));
+ const acc=1-Math.exp(-dt*(len>0?8:10));
  if(spec){specVel.x+=(tx-specVel.x)*acc;specVel.z+=(tz-specVel.z)*acc;specPos.x+=specVel.x*dt;specPos.z+=specVel.z*dt;specPos.y=clamp(specPos.y+(specY+((keys.e?1:0)-(keys.q?1:0)))*clamp(specPos.y,6,60)*1.2*dt,2,150);vel.x+=(0-vel.x)*acc;vel.z+=(0-vel.z)*acc}else{vel.x+=(tx-vel.x)*acc;vel.z+=(tz-vel.z)*acc}
- if(drivingCar&&monza){monza.position.x+=vel.x*dt;monza.position.z+=vel.z*dt;if(Math.hypot(vel.x,vel.z)>.5){let a=Math.atan2(vel.x,vel.z)-monza.rotation.y;a=Math.atan2(Math.sin(a),Math.cos(a));monza.rotation.y+=a*(1-Math.exp(-dt*5));player.position.copy(monza.position);player.rotation.copy(monza.rotation)} }else if(!spec)movePlayerWithCollision(vel.x*dt,vel.z*dt);else{specPos.x+=specVel.x*dt;specPos.z+=specVel.z*dt;}const fo=spec?specPos:player.position,gx=Math.round(fo.x/4)*4,gz=Math.round(fo.z/4)*4;groundMesh.position.set(gx,0,gz);sunLight.position.set(gx-45,75,gz+35);sunLight.target.position.set(gx,0,gz);
- const sp=Math.hypot(vel.x,vel.z);
- if(sp>.2){let d=Math.atan2(vel.x,vel.z)-player.rotation.y;d=Math.atan2(Math.sin(d),Math.cos(d));player.rotation.y+=d*(1-Math.exp(-dt*13))}
- // animação proporcional à velocidade
- walkPhase+=dt*sp*1.9;const amp=Math.min(sp/4.6,1.5)*.55;
- playerParts.legL.rotation.x=Math.sin(walkPhase)*amp;playerParts.legR.rotation.x=-Math.sin(walkPhase)*amp;
- playerParts.armL.rotation.x=-Math.sin(walkPhase)*amp*.65;playerParts.armR.rotation.x=Math.sin(walkPhase)*amp*.65;
- updateCamera(dt);
+ if(!spec)movePlayerWithCollision(vel.x*dt,vel.z*dt);else{specPos.x+=specVel.x*dt;specPos.z+=specVel.z*dt;}const fo=spec?specPos:player.position,gx=Math.round(fo.x/4)*4,gz=Math.round(fo.z/4)*4;groundMesh.position.set(gx,0,gz);sunLight.position.set(gx-45,75,gz+35);sunLight.target.position.set(gx,0,gz);
+ const sp=Math.hypot(vel.x,vel.z);if(sp>.2){let d=Math.atan2(vel.x,vel.z)-player.rotation.y;d=Math.atan2(Math.sin(d),Math.cos(d));player.rotation.y+=d*(1-Math.exp(-dt*10))}
+ walkPhase+=dt*sp*1.7;const amp=Math.min(sp/4.6,1.3)*.5;playerParts.legL.rotation.x=Math.sin(walkPhase)*amp;playerParts.legR.rotation.x=-Math.sin(walkPhase)*amp;playerParts.armL.rotation.x=-Math.sin(walkPhase)*amp*.65;playerParts.armR.rotation.x=Math.sin(walkPhase)*amp*.65;
+ updateCamera(dt);}
+
  updateDoorMotion();
  renderer.render(scene,camera);
  // Suaviza os movimentos dos jogadores remotos entre atualizações do Firebase
@@ -341,12 +323,7 @@ function drawMini(){const FX=spec?specPos.x:player.position.x,FZ=spec?specPos.z:
 let insideHouse=null,doorMotion=null;function animateDoorPivot(pivot,open,duration=.42,done=null){if(!pivot){if(done)done();return}doorMotion={pivot,from:pivot.rotation.y,to:open?Math.PI/2:0,start:performance.now(),duration:duration*1000,done};}function updateDoorMotion(){if(!doorMotion)return;const a=doorMotion, t=Math.min(1,(performance.now()-a.start)/a.duration), eased=t*t*(3-2*t);a.pivot.rotation.y=a.from+(a.to-a.from)*eased;if(t>=1){doorMotion=null;if(a.done)a.done()}}
 function enterHouse(p){if(!p.interior||!p.houseGroup){toast('Interior ainda não carregado.');return}p.houseGroup.updateMatrixWorld(true);const entryWorld=p.houseGroup.localToWorld(new THREE.Vector3(500,0,500));animateDoorPivot(p.houseGroup.userData.doorPivot,true,.38,()=>{insideHouse=p;p.interior.visible=true;player.position.set(entryWorld.x,0,entryWorld.z);vel.x=vel.z=0;camDist=7;camYaw=0;toast('Você entrou na casa. Caminhe até a porta e use Sair para voltar.');$('actBtn').textContent='🚪 Sair da casa';$('actBtn').style.display='block';animateDoorPivot(p.houseGroup.userData.doorPivot,false,.35)});}
 function exitHouse(){if(!insideHouse)return;const p=insideHouse;p.houseGroup.updateMatrixWorld(true);const exitWorld=p.houseGroup.localToWorld(new THREE.Vector3(0,0,-8));animateDoorPivot(p.houseGroup.userData.doorPivot,true,.38,()=>{p.interior.visible=false;player.position.set(exitWorld.x,0,exitWorld.z);vel.x=vel.z=0;insideHouse=null;toast('Você saiu da casa.');$('actBtn').style.display='none';$('enterBtn').style.display='none';$('actBtn').textContent='🏠 Ver imóvel';animateDoorPivot(p.houseGroup.userData.doorPivot,false,.35)})}
-function checkNearby(){
- if(drivingCar){$('actBtn').textContent='🚶 Sair do veículo';$('actBtn').style.display='block';$('enterBtn').style.display='none';return}
- nearDealer=null;let dealerDist=999;userObjs.forEach(g=>{if(g.userData.spec?.type==='concessionaria'){const d=Math.hypot(g.position.x-player.position.x,g.position.z-player.position.z);if(d<12&&d<dealerDist){dealerDist=d;nearDealer=g}}});
- if(nearDealer){$('actBtn').textContent='🚗 Abrir concessionária';$('actBtn').style.display='block';$('enterBtn').style.display='none';return}
- if(monza){const d=Math.hypot(monza.position.x-player.position.x,monza.position.z-player.position.z);if(hasMonza&&d<5){$('enterBtn').textContent='🚘 Entrar no Monza';$('enterBtn').style.display='block';$('actBtn').style.display='none';return}}
-if(insideHouse){$('actBtn').textContent='🚪 Sair da casa';$('actBtn').style.display='block';$('enterBtn').style.display='none';return}let near=null,dist=999;properties.forEach(p=>{let d=Math.hypot(p.x-player.position.x,p.z-player.position.z);if(d<9&&d<dist){near=p;dist=d}});
+function checkNearby(){if(insideHouse){$('actBtn').textContent='🚪 Sair da casa';$('actBtn').style.display='block';$('enterBtn').style.display='none';return}let near=null,dist=999;properties.forEach(p=>{let d=Math.hypot(p.x-player.position.x,p.z-player.position.z);if(d<9&&d<dist){near=p;dist=d}});
  if(near!==nearProp){nearProp=near;if(near){selected=near;toast((near.ownerUid?'Casa de '+near.ownerName:'Casa à venda')+' • use o botão de ação');showProperty(near,false)}}
  if(nearProp&&nearProp.building){$('actBtn').textContent=!nearProp.ownerUid?'🏠 Comprar casa':nearProp.ownerUid===uid?(nearProp.locked?'🔓 Destrancar porta':'🔒 Trancar porta'):(nearProp.locked?'🔒 Porta trancada':'🚪 Entrar na casa')}else{$('actBtn').textContent='🏠 Ver imóvel'}$('actBtn').style.display=nearProp?'block':'none';const canEnter=!!(nearProp&&nearProp.building&&nearProp.ownerUid&&nearProp.ownerUid===uid&&!nearProp.locked);$('enterBtn').style.display=canEnter?'block':'none'}
 function showProperty(p,open=true){selected=p;const isBuiltHouse=!!p.building;$('propTitle').textContent=(p.type==='casa'?'🏠 Casa':'🌳 Terreno')+' • '+p.id;$('propDesc').textContent=isBuiltHouse?'Casa '+(HOUSE_TYPES[p.model]?.label||'residencial')+'. Com interior, porta e venda definida pelo administrador.':p.type==='casa'?'Casa residencial em bairro da cidade.':'Terreno disponível para construir sua própria casa.';$('propPrice').textContent='🪙 '+Number(p.price||0).toLocaleString('pt-BR')+' STACOINS';$('propStatus').textContent=p.ownerUid?'Proprietário: '+p.ownerName+(p.building?' • Porta '+(p.locked?'trancada':'destrancada'):''):'Disponível para compra';$('buyBtn').textContent=p.ownerUid?(p.ownerUid===uid?'Seu imóvel':'Já possui proprietário'):'Comprar agora';$('buyBtn').disabled=!!p.ownerUid;$('buyBtn').style.opacity=p.ownerUid?.55:1;if(open)$('propertyModal').classList.add('open')}
@@ -428,7 +405,7 @@ $('chatForm').addEventListener('submit',async e=>{e.preventDefault();const input
 
 function loadScript(src){return new Promise((res,rej)=>{let s=document.createElement('script');s.src=src;s.onload=()=>{clearTimeout(t);res()};s.onerror=()=>{clearTimeout(t);rej(Error('Falha ao carregar Firebase ('+src.split('/').slice(-2).join('/')+'). Verifique a internet.'))};let t=setTimeout(()=>{s.remove();rej(Error('Tempo esgotado ao carregar Firebase. Verifique internet ou bloqueio do navegador.'))},15000);document.head.appendChild(s)})}
 function open(id){$(id).classList.add('open')}document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$(b.dataset.close).classList.remove('open'));
-$('buyBtn').onclick=buyProperty;$('buyMonza').onclick=()=>{if(hasMonza){toast('Você já possui o Monza!');return}hasMonza=true;localStorage.setItem('trindade_has_monza','1');$('dealerModal').classList.remove('open');monza=createMonza(player.position.x+5,player.position.z+2);toast('Monza adquirido por 0 STACOINS!');};$('enterBtn').onclick=()=>{if(monza&&hasMonza&&Math.hypot(monza.position.x-player.position.x,monza.position.z-player.position.z)<5){drivingCar=true;player.visible=false;camDist=10;toast('Você entrou no Monza. Use o joystick para dirigir; toque em Sair do veículo para sair.');return}if(nearProp&&nearProp.building&&nearProp.ownerUid===uid&&!nearProp.locked)enterHouse(nearProp);else toast('Você precisa ser proprietário e destrancar a porta.')};$('actBtn').onclick=()=>{if(drivingCar){drivingCar=false;player.visible=true;player.position.set(monza.position.x+2,0,monza.position.z);vel.x=vel.z=0;toast('Você saiu do veículo.');return}if(nearDealer){$('dealerModal').classList.add('open');return}if(insideHouse){exitHouse();return}if(!nearProp)return;if(nearProp.building){if(!nearProp.ownerUid){showProperty(nearProp,true);return}if(nearProp.ownerUid===uid){nearProp.locked=!nearProp.locked;const status=nearProp.locked?'trancada':'destrancada';if(firebaseOn&&db)db.ref('trindade/properties/'+nearProp.id).update({locked:nearProp.locked}).catch(e=>toast('Falha ao salvar fechadura: '+e.message));toast('Porta '+status+'.');renderProperties();return}if(nearProp.locked){toast('Esta casa está trancada pelo proprietário.');return}enterHouse(nearProp);return}showProperty(nearProp,true)};
+$('buyBtn').onclick=buyProperty;$('enterBtn').onclick=()=>{if(nearProp&&nearProp.building&&nearProp.ownerUid===uid&&!nearProp.locked)enterHouse(nearProp);else toast('Você precisa ser proprietário e destrancar a porta.')};$('actBtn').onclick=()=>{if(insideHouse){exitHouse();return}if(!nearProp)return;if(nearProp.building){if(!nearProp.ownerUid){showProperty(nearProp,true);return}if(nearProp.ownerUid===uid){nearProp.locked=!nearProp.locked;const status=nearProp.locked?'trancada':'destrancada';if(firebaseOn&&db)db.ref('trindade/properties/'+nearProp.id).update({locked:nearProp.locked}).catch(e=>toast('Falha ao salvar fechadura: '+e.message));toast('Porta '+status+'.');renderProperties();return}if(nearProp.locked){toast('Esta casa está trancada pelo proprietário.');return}enterHouse(nearProp);return}showProperty(nearProp,true)};
 $('propertiesBtn').onclick=()=>{renderProperties();open('propertiesModal')};$('myHomeBtn').onclick=()=>{renderProperties();$('propertyList').querySelectorAll('.property-card').forEach((el,i)=>{if(properties[i].ownerUid!==uid)el.style.display='none'});open('propertiesModal')};
 $('customBtn').onclick=$('customNav').onclick=()=>{ $('nameInput').value=appearance.name;open('customModal')};
 $('settingsBtn').onclick=()=>{$('settingsName').value=appearance.name||'';open('settingsModal')};$('hudName').textContent=appearance.name;$('saveSettingsName').onclick=()=>{const chosen=$('settingsName').value.trim().slice(0,24)||'Visitante';appearance.name=chosen;localStorage.setItem('trindade_player_name',chosen);localStorage.setItem('trindade_avatar',JSON.stringify(appearance));$('hudName').textContent=chosen;$('nameInput').value=chosen;if(firebaseOn&&db)db.ref('trindade/players/'+uid).update({name:chosen}).catch(()=>{});$('settingsModal').classList.remove('open');toast('Nome atualizado!')};$('connectBtn').onclick=()=>toast('O multiplayer é conectado pelo login.');$('socialBtn').onclick=()=>open('socialModal');
@@ -726,17 +703,8 @@ function bCasaPequena(s,preview=false){buildHouseExterior(s,'casa_pequena',previ
 function bCasaModerna(s,preview=false){buildHouseExterior(s,'casa_moderna',preview)}
 function bCasaRustica(s,preview=false){buildHouseExterior(s,'casa_rustica',preview)}
 function bCasaFamilia(s,preview=false){buildHouseExterior(s,'casa_familia',preview)}
-function bConcessionaria(){
- // Concessionária compacta: fachada, vitrine, cobertura, placa e carros de exposição.
- box(0,3.2,0,22,6.4,14,0xd9dfe4);box(0,6.5,0,23,.3,15,0x38424b);
- box(0,5.4,-7.15,21,2.2,.25,0x182a3b);box(0,7,-7.3,21,.22,.3,0x202c38);
- const sign=canvasTex(1024,180,(c,w,h)=>{c.fillStyle='#16283a';c.fillRect(0,0,w,h);c.fillStyle='#f4f6f8';c.font='bold 110px Arial';c.textAlign='center';c.textBaseline='middle';c.fillText('CONCESSIONÁRIA',w/2,h/2);c.fillStyle='#54e0b0';c.font='bold 58px Arial';c.fillText('TRINDADE',w/2,h-35)});
- planeM(16,2.3,0,7.8,-7.48,new THREE.MeshStandardMaterial({map:sign,roughness:.65}));
- for(let x=-8;x<=8;x+=4){box(x,2.8,-7.24,3.4,4.8,.12,0x7396a5);box(x,2.8,-7.12,3.05,4.45,.06,0x9cc5d1)}
- box(0,.15,-8,7,.3,1.4,0x68727a);box(-8,3.4,7.2,5,6.8,.4,0x505b65);box(8,3.4,7.2,5,6.8,.4,0x505b65);
-}
 const BTYPES={
- concessionaria:{n:'🚗 Concessionária',snap:2,fn:bConcessionaria},casa_pequena:{n:'🏠 Casa simples',snap:2,color:1,house:1,fn:bCasaPequena},casa_moderna:{n:'🏡 Casa moderna',snap:2,color:1,house:1,fn:bCasaModerna},casa_rustica:{n:'🪵 Casa rústica',snap:2,color:1,house:1,fn:bCasaRustica},casa_familia:{n:'🏘️ Casa familiar',snap:2,color:1,house:1,fn:bCasaFamilia},
+ casa_pequena:{n:'🏠 Casa simples',snap:2,color:1,house:1,fn:bCasaPequena},casa_moderna:{n:'🏡 Casa moderna',snap:2,color:1,house:1,fn:bCasaModerna},casa_rustica:{n:'🪵 Casa rústica',snap:2,color:1,house:1,fn:bCasaRustica},casa_familia:{n:'🏘️ Casa familiar',snap:2,color:1,house:1,fn:bCasaFamilia},
  mercado:{n:'🛒 Atacarejo Bandiera',snap:1,fn:bMercado},agrosul:{n:'🌾 AgroSul',snap:1,fn:bAgroSul},hotel:{n:'🏨 Hotel Alvorada',snap:1,fn:bHotel},casaarcos:{n:'🏡 Casa dos Arcos',snap:1,fn:bCasaArcos},placaperim:{n:'🔵 Placa Perímetro Urbano',snap:1,fn:bPlacaPerimetro},placahotel:{n:'🪧 Placa Hotel Alvorada',snap:1,fn:bPlacaHotel},casa:{n:'🏠 Casa',snap:2,color:1,fn:bCasa},predio:{n:'🏢 Prédio',snap:2,color:1,floors:1,fn:bPredio},
  estrada:{n:'🛣️ Estrada',snap:13,fn:()=>{box(0,.03,0,13,.06,13,0x343b40);[-4,0,4].forEach(x=>box(x,.07,0,2,.03,.14,0xf3d16a))}},
  cruz:{n:'➕ Cruzamento',snap:13,fn:()=>box(0,.03,0,13,.06,13,0x343b40)},rodovia:{n:'🛣️ Rodovia RS',snap:13,fn:eRodovia},terra:{n:'🟤 Estrada de terra',snap:13,fn:eTerra},paralelo:{n:'🧱 Paralelepípedo',snap:13,fn:eParalelepipedo},faixa:{n:'🦓 Faixa pedestre',snap:13,fn:eFaixa},rotatoria:{n:'🔄 Rotatória',snap:13,fn:eRotatoria},meiofio:{n:'▬ Meio-fio',snap:1,fn:eMeioFio},
@@ -811,7 +779,7 @@ $('buildBtn').onclick=()=>{if(isAdmin)setBuild(!buildMode);else toast('Construç
 document.addEventListener('keydown',e=>{if(e.target&&['INPUT','SELECT'].includes(e.target.tagName))return;const k=e.key.toLowerCase();
  if(k==='b')setBuild(!buildMode);else if(!buildMode)return;else if(k==='v')setSpec(!spec);else if(k==='r')rotateB();else if(k==='x'){bDel=!bDel;tint(hoverG,false);hoverG=null;refreshGhost();syncUI()}else if(k==='z'&&(e.ctrlKey||e.metaKey)){undoB();e.preventDefault()}});
 window.connectFirebase=connectFirebase;
-makeWorld();loadLocal();loadBuild();if(hasMonza)monza=createMonza(player.position.x+5,player.position.z+2);$('buildBtn').style.display='';renderProperties();animate();
+makeWorld();loadLocal();loadBuild();$('buildBtn').style.display='';renderProperties();animate();
 }
 
 let loginMode='login';const loginToggle=document.getElementById('loginToggle'),loginAction=document.getElementById('loginAction');loginToggle.onclick=()=>{loginMode=loginMode==='login'?'register':'login';loginAction.textContent=loginMode==='login'?'Entrar':'Criar conta';loginToggle.textContent=loginMode==='login'?'Criar uma conta':'Voltar ao login';document.getElementById('loginSub').textContent=loginMode==='login'?'Entre na sua conta':'Crie sua conta para guardar seu progresso';document.getElementById('loginMsg').textContent=''};loginAction.onclick=async()=>{const e=document.getElementById('loginEmail').value.trim(),p=document.getElementById('loginPass').value;if(!e||!p){document.getElementById('loginMsg').textContent='Preencha e-mail e senha.';return}if(p.length<6){document.getElementById('loginMsg').textContent='A senha precisa ter pelo menos 6 caracteres.';return}loginAction.disabled=true;document.getElementById('loginMsg').textContent='Conectando...';try{if(typeof window.connectFirebase!=='function')throw new Error('O motor do jogo ainda está inicializando. Aguarde e tente novamente.');await window.connectFirebase(e,p)}catch(err){document.getElementById('loginMsg').textContent='ERRO: '+(err&&err.message?err.message:String(err));console.error('[Trindade login error]',err)}finally{loginAction.disabled=false}};window.addEventListener('load',()=>{setTimeout(()=>{document.getElementById('startup').style.display='none';document.getElementById('loginScreen').style.display='flex'},5000)});
