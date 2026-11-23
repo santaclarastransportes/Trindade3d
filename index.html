@@ -237,13 +237,14 @@ function animate(){
  syncPosition();
 }
 function drawMini(){const FX=spec?specPos.x:player.position.x,FZ=spec?specPos.z:player.position.z;const c=$('mini'),ctx=c.getContext('2d'),w=c.width,h=c.height;ctx.clearRect(0,0,w,h);ctx.fillStyle='#273f3b';ctx.fillRect(0,0,w,h);ctx.strokeStyle='#8b9692';ctx.lineWidth=13;for(let i=0;i<5;i++){ctx.beginPath();ctx.moveTo(i*60-20,0);ctx.lineTo(i*60+40,h);ctx.stroke()}ctx.fillStyle='#f0b34b';properties.filter(p=>p.ownerUid).forEach(p=>{let xx=w/2+(p.x-FX)*1.15,yy=h/2+(p.z-FZ)*1.15;if(xx>0&&xx<w&&yy>0&&yy<h){ctx.beginPath();ctx.arc(xx,yy,3,0,7);ctx.fill()}});ctx.fillStyle='#d9d4c4';userObjs.forEach(g=>{let xx=w/2+(g.position.x-FX)*1.15,yy=h/2+(g.position.z-FZ)*1.15;if(xx>0&&xx<w&&yy>0&&yy<h)ctx.fillRect(xx-2,yy-2,4,4)});ctx.fillStyle='#f5f7fa';ctx.beginPath();ctx.arc(w/2,h/2,7,0,7);ctx.fill()}
-function checkNearby(){let near=null,dist=999;properties.forEach(p=>{let d=Math.hypot(p.x-player.position.x,p.z-player.position.z);if(d<9&&d<dist){near=p;dist=d}});
- if(near!==nearProp){nearProp=near;if(near){selected=near;toast((near.ownerUid?'Imóvel de '+near.ownerName:'Imóvel disponível')+' • toque em "Ver imóvel"');showProperty(near,false)}}
- $('actBtn').style.display=nearProp?'block':'none'}
-function showProperty(p,open=true){selected=p;$('propTitle').textContent=(p.type==='casa'?'🏠 Casa':'🌳 Terreno')+' • '+p.id;$('propDesc').textContent=p.type==='casa'?'Casa residencial em bairro da cidade.':'Terreno disponível para construir sua própria casa.';$('propPrice').textContent='🪙 '+p.price.toLocaleString('pt-BR')+' STACOINS';$('propStatus').textContent=p.ownerUid?'Proprietário: '+p.ownerName:'Disponível para compra';$('buyBtn').textContent=p.ownerUid?(p.ownerUid===uid?'Seu imóvel':'Já possui proprietário'):'Comprar agora';$('buyBtn').disabled=!!p.ownerUid;$('buyBtn').style.opacity=p.ownerUid?.55:1;if(open)$('propertyModal').classList.add('open')}
+let insideHouse=null;function enterHouse(p){if(!p.interior||!p.houseGroup){toast('Interior ainda não carregado.');return}insideHouse=p;p.interior.visible=true;player.position.set(p.interiorX,0,p.interiorZ);vel.x=vel.z=0;camDist=9;camYaw=0;toast('Você entrou na casa. Caminhe até a porta e use Sair para voltar.');$('actBtn').textContent='🚪 Sair da casa';$('actBtn').style.display='block'}function exitHouse(){if(!insideHouse)return;insideHouse.interior.visible=false;const r=insideHouse.houseGroup.rotation.y;player.position.set(insideHouse.x-8*Math.sin(r),0,insideHouse.z-8*Math.cos(r));vel.x=vel.z=0;const exited=insideHouse;insideHouse=null;toast('Você saiu da casa.');$('actBtn').style.display='none';$('actBtn').textContent='🏠 Ver imóvel'}
+function checkNearby(){if(insideHouse){$('actBtn').textContent='🚪 Sair da casa';$('actBtn').style.display='block';return}let near=null,dist=999;properties.forEach(p=>{let d=Math.hypot(p.x-player.position.x,p.z-player.position.z);if(d<9&&d<dist){near=p;dist=d}});
+ if(near!==nearProp){nearProp=near;if(near){selected=near;toast((near.ownerUid?'Casa de '+near.ownerName:'Casa à venda')+' • use o botão de ação');showProperty(near,false)}}
+ if(nearProp&&nearProp.building){$('actBtn').textContent=!nearProp.ownerUid?'🏠 Comprar casa':nearProp.ownerUid===uid?(nearProp.locked?'🔓 Destrancar porta':'🔒 Trancar porta'):(nearProp.locked?'🔒 Porta trancada':'🚪 Entrar na casa')}else{$('actBtn').textContent='🏠 Ver imóvel'}$('actBtn').style.display=nearProp?'block':'none'}
+function showProperty(p,open=true){selected=p;const isBuiltHouse=!!p.building;$('propTitle').textContent=(p.type==='casa'?'🏠 Casa':'🌳 Terreno')+' • '+p.id;$('propDesc').textContent=isBuiltHouse?'Casa '+(HOUSE_TYPES[p.model]?.label||'residencial')+'. Com interior, porta e venda definida pelo administrador.':p.type==='casa'?'Casa residencial em bairro da cidade.':'Terreno disponível para construir sua própria casa.';$('propPrice').textContent='🪙 '+Number(p.price||0).toLocaleString('pt-BR')+' STACOINS';$('propStatus').textContent=p.ownerUid?'Proprietário: '+p.ownerName+(p.building?' • Porta '+(p.locked?'trancada':'destrancada'):''):'Disponível para compra';$('buyBtn').textContent=p.ownerUid?(p.ownerUid===uid?'Seu imóvel':'Já possui proprietário'):'Comprar agora';$('buyBtn').disabled=!!p.ownerUid;$('buyBtn').style.opacity=p.ownerUid?.55:1;if(open)$('propertyModal').classList.add('open')}
 function renderProperties(){const box=$('propertyList');box.innerHTML='';properties.forEach(p=>{const d=document.createElement('div');d.className='property-card';d.innerHTML=`<b>${p.type==='casa'?'🏠 Casa':'🌳 Terreno'} — ${p.id}</b><small>${p.ownerUid?'Proprietário: '+escapeHtml(p.ownerName||'Jogador'):'Disponível'} • ${p.price} STACOINS</small><div style="margin-top:8px"><button class="${p.ownerUid?'secondary':'green'}" ${p.ownerUid?'disabled':''} data-id="${p.id}">${p.ownerUid?'Ocupado':'Ver imóvel'}</button></div>`;box.appendChild(d)});box.querySelectorAll('button[data-id]').forEach(b=>b.onclick=()=>{let p=properties.find(x=>x.id===b.dataset.id);if(p){player.position.set(p.x,0,p.z+10);vel.x=vel.z=0;$('propertiesModal').classList.remove('open');showProperty(p)}})}
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-async function buyProperty(){const p=selected;if(!p)return;if(p.ownerUid){toast('Este imóvel já tem proprietário.');return}if(coins<p.price){toast('Saldo insuficiente para comprar este imóvel.');return}const data={ownerUid:uid,ownerName:appearance.name,purchasedAt:Date.now()};try{if(firebaseOn){const ref=db.ref('trindade/properties/'+p.id);const result=await ref.transaction(current=>{if(current&&current.ownerUid)return;return {...(current||{}),...data,type:p.type,price:p.price,x:p.x,z:p.z}});if(!result.committed){toast('Outro jogador comprou este imóvel primeiro.');return}}else{localStorage.setItem('trindade_properties',JSON.stringify(properties.map(q=>q.id===p.id?{...q,...data}:q)))}p.ownerUid=uid;p.ownerName=appearance.name;coins-=p.price;$('coins').textContent=coins.toLocaleString('pt-BR');$('propertyModal').classList.remove('open');renderProperties();toast('Parabéns! Imóvel registrado em nome de '+appearance.name+'.');}catch(e){toast('Não foi possível registrar a compra: '+e.message)}}
+async function buyProperty(){const p=selected;if(!p)return;if(p.ownerUid){toast('Este imóvel já tem proprietário.');return}if(coins<p.price){toast('Saldo insuficiente para comprar este imóvel.');return}const data={ownerUid:uid,ownerName:appearance.name,purchasedAt:Date.now()};try{if(firebaseOn){const ref=db.ref('trindade/properties/'+p.id);const result=await ref.transaction(current=>{if(current&&current.ownerUid)return;return {...(current||{}),...data,type:p.type,price:p.price,x:p.x,z:p.z,locked:p.building?true:(current&&current.locked||false),houseId:p.building?p.id:undefined}});if(!result.committed){toast('Outro jogador comprou este imóvel primeiro.');return}}else{localStorage.setItem('trindade_properties',JSON.stringify(properties.map(q=>q.id===p.id?{...q,...data}:q)))}p.ownerUid=uid;p.ownerName=appearance.name;if(p.building)p.locked=true;coins-=p.price;$('coins').textContent=coins.toLocaleString('pt-BR');$('propertyModal').classList.remove('open');renderProperties();toast('Parabéns! Imóvel registrado em nome de '+appearance.name+'.');}catch(e){toast('Não foi possível registrar a compra: '+e.message)}}
 function loadLocal(){try{let saved=JSON.parse(localStorage.getItem('trindade_properties')||'[]');saved.forEach(s=>{let p=properties.find(x=>x.id===s.id);if(p&&s.ownerUid){p.ownerUid=s.ownerUid;p.ownerName=s.ownerName;p.purchasedAt=s.purchasedAt}});let a=JSON.parse(localStorage.getItem('trindade_avatar')||'null');if(a){appearance={...appearance,...a};$('hudName').textContent=appearance.name;$('nameInput').value=appearance.name;}}catch(e){}}
 function syncPosition(){if(!firebaseOn||!db||Date.now()-lastNet<900)return;lastNet=Date.now();db.ref('trindade/players/'+uid).update({uid,name:appearance.name,x:player.position.x,z:player.position.z,ry:player.rotation.y,updatedAt:Date.now()}).catch(()=>{})}
 async function connectFirebase(email,password){
@@ -275,7 +276,7 @@ async function connectFirebase(email,password){
    const ref=db.ref('trindade/properties');
    const snap=await withTimeout(ref.get(),10000,'Leitura dos imóveis');const remoteProps=snap.val()||{};
    properties.forEach(p=>{if(remoteProps[p.id]){p.ownerUid=remoteProps[p.id].ownerUid||null;p.ownerName=remoteProps[p.id].ownerName||null}});
-   ref.on('value',s=>{const vals=s.val()||{};properties.forEach(p=>{if(vals[p.id]){p.ownerUid=vals[p.id].ownerUid||null;p.ownerName=vals[p.id].ownerName||null}else{p.ownerUid=null;p.ownerName=null}});renderProperties()});
+   ref.on('value',s=>{const vals=s.val()||{};properties.forEach(p=>{if(vals[p.id]){p.ownerUid=vals[p.id].ownerUid||null;p.ownerName=vals[p.id].ownerName||null;if(p.building)p.locked=vals[p.id].locked!==false}else{p.ownerUid=null;p.ownerName=null;if(p.building)p.locked=true}});renderProperties()});
    db.ref('trindade/players').on('value',s=>{$('online').textContent='🟢 '+Object.keys(s.val()||{}).length+' online'});
    db.ref('trindade/players').on('value',s=>{const vals=s.val()||{};Object.entries(vals).forEach(([id,v])=>{if(id===uid)return;if(!remoteHumans[id]){const old=appearance;appearance={...appearance,name:v.name||'Jogador'};const h=makeHumanoid().group;appearance=old;remoteHumans[id]=h;h.position.set(Number(v.x)||0,0,Number(v.z)||0);h.rotation.y=Number(v.ry)||0;scene.add(h)}const h=remoteHumans[id];h.userData.netTarget={x:Number(v.x)||0,z:Number(v.z)||0,ry:Number(v.ry)||0};});Object.keys(remoteHumans).forEach(id=>{if(!vals[id]){scene.remove(remoteHumans[id]);delete remoteHumans[id]}})});
    // Sincroniza construções compartilhadas: todos recebem as construções do administrador.
@@ -319,7 +320,7 @@ $('chatForm').addEventListener('submit',async e=>{e.preventDefault();const input
 
 function loadScript(src){return new Promise((res,rej)=>{let s=document.createElement('script');s.src=src;s.onload=()=>{clearTimeout(t);res()};s.onerror=()=>{clearTimeout(t);rej(Error('Falha ao carregar Firebase ('+src.split('/').slice(-2).join('/')+'). Verifique a internet.'))};let t=setTimeout(()=>{s.remove();rej(Error('Tempo esgotado ao carregar Firebase. Verifique internet ou bloqueio do navegador.'))},15000);document.head.appendChild(s)})}
 function open(id){$(id).classList.add('open')}document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$(b.dataset.close).classList.remove('open'));
-$('buyBtn').onclick=buyProperty;$('actBtn').onclick=()=>{if(nearProp)showProperty(nearProp,true)};
+$('buyBtn').onclick=buyProperty;$('actBtn').onclick=()=>{if(insideHouse){exitHouse();return}if(!nearProp)return;if(nearProp.building){if(!nearProp.ownerUid){showProperty(nearProp,true);return}if(nearProp.ownerUid===uid){nearProp.locked=!nearProp.locked;const status=nearProp.locked?'trancada':'destrancada';if(firebaseOn&&db)db.ref('trindade/properties/'+nearProp.id).update({locked:nearProp.locked}).catch(e=>toast('Falha ao salvar fechadura: '+e.message));toast('Porta '+status+'.');renderProperties();return}if(nearProp.locked){toast('Esta casa está trancada pelo proprietário.');return}enterHouse(nearProp);return}showProperty(nearProp,true)};
 $('propertiesBtn').onclick=()=>{renderProperties();open('propertiesModal')};$('myHomeBtn').onclick=()=>{renderProperties();$('propertyList').querySelectorAll('.property-card').forEach((el,i)=>{if(properties[i].ownerUid!==uid)el.style.display='none'});open('propertiesModal')};
 $('customBtn').onclick=$('customNav').onclick=()=>{ $('nameInput').value=appearance.name;open('customModal')};
 $('settingsBtn').onclick=()=>{$('settingsName').value=appearance.name||'';open('settingsModal')};$('hudName').textContent=appearance.name;$('saveSettingsName').onclick=()=>{const chosen=$('settingsName').value.trim().slice(0,24)||'Visitante';appearance.name=chosen;localStorage.setItem('trindade_player_name',chosen);localStorage.setItem('trindade_avatar',JSON.stringify(appearance));$('hudName').textContent=chosen;$('nameInput').value=chosen;if(firebaseOn&&db)db.ref('trindade/players/'+uid).update({name:chosen}).catch(()=>{});$('settingsModal').classList.remove('open');toast('Nome atualizado!')};$('connectBtn').onclick=()=>toast('O multiplayer é conectado pelo login.');$('socialBtn').onclick=()=>open('socialModal');
@@ -557,7 +558,58 @@ function pColonial(){cyl(0,.4,0,.35,.45,.8,0x2b2e32,8);cyl(0,2.4,0,.08,.14,3.6,0
  const g=new THREE.Mesh(new THREE.CylinderGeometry(.34,.24,.7,4),new THREE.MeshBasicMaterial({color:0xffe9a8}));g.position.set(0,4.75,0);g.rotation.y=Math.PI/4;add(g);cone(0,5.35,0,.5,.45,0x2b2e32,4)}
 function pTorre(){cyl(0,7,0,.18,.3,14,0x9aa0a4,8);box(0,14.2,0,3.6,.3,.5,0x6a7076);for(let i=0;i<4;i++){const x=-1.35+i*.9;box(x,14.7,-.1,.7,.55,.15,0xf7f7e8);const g=new THREE.Mesh(new THREE.BoxGeometry(.6,.45,.04),new THREE.MeshBasicMaterial({color:0xfff6c8}));g.position.set(x,14.7,-.2);add(g)}}
 // ===== FIM =====
+// ====== SISTEMA DE CASAS COM INTERIORES ======
+const HOUSE_TYPES={
+ casa_pequena:{label:'Casa simples',emoji:'🏠',priceDefault:2500,color:0xe0d3bd},
+ casa_moderna:{label:'Casa moderna',emoji:'🏡',priceDefault:8500,color:0xd6d9dc},
+ casa_rustica:{label:'Casa rústica',emoji:'🪵',priceDefault:5000,color:0xc69b69},
+ casa_familia:{label:'Casa familiar',emoji:'🏘️',priceDefault:12000,color:0xe9e3d7}
+};
+function buildHouseExterior(s,kind){
+ const wall=s.color||HOUSE_TYPES[kind].color, roof=kind==='casa_rustica'?0x65432a:kind==='casa_moderna'?0x343b45:0x914b3c;
+ if(kind==='casa_pequena'){
+  box(0,1.7,0,9,3.4,8,wall);box(0,3.8,0,9.3,.25,8.3,0xb9b3a8);
+  const r=new THREE.Mesh(new THREE.ConeGeometry(7,3,4),mat(roof));r.rotation.y=Math.PI/4;r.position.set(0,5.1,0);add(r);
+ }else if(kind==='casa_moderna'){
+  box(0,2,0,11,4,9,wall);box(0,4.15,0,11.5,.3,9.5,0x333a42);box(0,5.1,-.4,8,.25,7.5,roof);
+  box(-3,2.2,-4.56,2.3,2.3,.1,0x77aebe);box(3,2.2,-4.56,2.3,2.3,.1,0x77aebe);
+ }else if(kind==='casa_rustica'){
+  box(0,1.8,0,10,3.6,8.5,wall);box(0,3.65,0,10.4,.3,8.9,0x76563b);
+  const r=new THREE.Mesh(new THREE.ConeGeometry(7.5,3.5,4),mat(roof));r.rotation.y=Math.PI/4;r.position.set(0,5.1,0);add(r);
+  box(-3.4,1.8,-4.32,1.6,1.7,.12,0x88a9b3);box(3.4,1.8,-4.32,1.6,1.7,.12,0x88a9b3);
+ }else{
+  box(0,2,0,12,4,10,wall);box(0,4.1,0,12.5,.3,10.5,0xb8b5ad);box(0,5.3,0,12.6,2.4,10.6,roof);
+  [-4,0,4].forEach(x=>box(x,2.1,-5.06,2.2,2.1,.1,0x79aebe));box(0,1.8,5.06,4,1.8,.1,0x79aebe);
+ }
+ // Porta externa e maçaneta (fachada frontal -Z)
+ box(0,1.2,-4.15,1.45,2.4,.18,0x63432f);box(.48,1.25,-4.27,.08,.08,.08,0xd7b65a);
+ box(0,.12,-5.1,3.6,.24,1.4,0xb8b2a7);box(0,.1,5.1,3.6,.2,1.4,0xb8b2a7);
+ // Interior oculto, construído em coordenadas virtuais afastadas do mapa principal
+ const interior=new THREE.Group();interior.visible=false;interior.userData.isInterior=true;add(interior);
+ const prev=curGroup;curGroup=inter;const ix=500,iz=500;
+ box(ix,0,iz,11, .18,10,0xb8a990); // piso
+ box(ix,2.1,iz-5,11,4.2,.18,wall);box(ix,2.1,iz+5,11,4.2,.18,wall);
+ box(ix-5.5,2.1,iz, .18,4.2,10,wall);box(ix+5.5,2.1,iz, .18,4.2,10,wall);
+ // sala, sofá, mesa, TV
+ box(ix-2, .45,iz-1.8,3.4,.8,1.1,0x4b3430);box(ix-2,1,iz-2.25,3.4,.3,.2,0x5e443a);box(ix-3.3,1.15,iz-1.8,.3,.5,1.1,0x5e443a);box(ix-.7,1.15,iz-1.8,.3,.5,1.1,0x5e443a);
+ box(ix+2.8,.6,iz-3.2,2.2,1.2,.15,0x2a3038);box(ix+2.8,1.4,iz-3.28,1.8,.7,.08,0x20252b);
+ box(ix, .45,iz+.1,2.3,.6,1.3,0x8a6645);box(ix, .78,iz+.1,2.1,.08,1.1,0xb79a72);
+ // cozinha: balcão, pia, geladeira
+ box(ix+3.7,.9,iz+2.8,3.1,1.8,.8,0xb6b8b9);box(ix+3.7,1.85,iz+2.8,3.3,.15,.9,0x444b52);box(ix+4.8,1.4,iz+4.15,1.1,2.8,.9,0xdde2e4);
+ // quarto com cama e armário
+ box(ix-3.3,.45,iz+3.2,3.2,.6,2.2,0xeee4dc);box(ix-3.3,.8,iz+2.3,3.2,.2,.5,0x6389a8);box(ix-4.2,1.1,iz+2.3,.6,.45,.5,0xffffff);
+ box(ix-5,1.4,iz+4.2,.9,2.8,1.2,0x8b6545);
+ // iluminação interior e janela simulada
+ box(ix,3.9,iz,.7,.12,.7,0xffe8a0);box(ix-5.59,2.5,iz-1.5,.06,1.4,2.2,0x8ac8df);
+ curGroup=prev;gHouseInterior=interior;
+}
+let gHouseInterior=null;
+function bCasaPequena(s){buildHouseExterior(s,'casa_pequena')}
+function bCasaModerna(s){buildHouseExterior(s,'casa_moderna')}
+function bCasaRustica(s){buildHouseExterior(s,'casa_rustica')}
+function bCasaFamilia(s){buildHouseExterior(s,'casa_familia')}
 const BTYPES={
+ casa_pequena:{n:'🏠 Casa simples',snap:2,color:1,house:1,fn:bCasaPequena},casa_moderna:{n:'🏡 Casa moderna',snap:2,color:1,house:1,fn:bCasaModerna},casa_rustica:{n:'🪵 Casa rústica',snap:2,color:1,house:1,fn:bCasaRustica},casa_familia:{n:'🏘️ Casa familiar',snap:2,color:1,house:1,fn:bCasaFamilia},
  mercado:{n:'🛒 Atacarejo Bandiera',snap:1,fn:bMercado},agrosul:{n:'🌾 AgroSul',snap:1,fn:bAgroSul},hotel:{n:'🏨 Hotel Alvorada',snap:1,fn:bHotel},casaarcos:{n:'🏡 Casa dos Arcos',snap:1,fn:bCasaArcos},placaperim:{n:'🔵 Placa Perímetro Urbano',snap:1,fn:bPlacaPerimetro},placahotel:{n:'🪧 Placa Hotel Alvorada',snap:1,fn:bPlacaHotel},casa:{n:'🏠 Casa',snap:2,color:1,fn:bCasa},predio:{n:'🏢 Prédio',snap:2,color:1,floors:1,fn:bPredio},
  estrada:{n:'🛣️ Estrada',snap:13,fn:()=>{box(0,.03,0,13,.06,13,0x343b40);[-4,0,4].forEach(x=>box(x,.07,0,2,.03,.14,0xf3d16a))}},
  cruz:{n:'➕ Cruzamento',snap:13,fn:()=>box(0,.03,0,13,.06,13,0x343b40)},rodovia:{n:'🛣️ Rodovia RS',snap:13,fn:eRodovia},terra:{n:'🟤 Estrada de terra',snap:13,fn:eTerra},paralelo:{n:'🧱 Paralelepípedo',snap:13,fn:eParalelepipedo},faixa:{n:'🦓 Faixa pedestre',snap:13,fn:eFaixa},rotatoria:{n:'🔄 Rotatória',snap:13,fn:eRotatoria},meiofio:{n:'▬ Meio-fio',snap:1,fn:eMeioFio},
@@ -565,7 +617,7 @@ const BTYPES={
  arvore:{n:'🌳 Árvore',snap:1,fn:()=>tree(0,0)},poste:{n:'💡 Poste',snap:1,fn:()=>lamp(0,0)},araucaria:{n:'🌲 Araucária',snap:1,fn:tAraucaria},palmeira:{n:'🌴 Palmeira',snap:1,fn:tPalmeira},ipe:{n:'🌼 Ipê amarelo',snap:1,fn:tIpe},eucalipto:{n:'🌿 Eucalipto',snap:1,fn:tEucalipto},pinus:{n:'🎄 Pinus',snap:1,fn:tPinus},cipreste:{n:'🌲 Cipreste',snap:1,fn:tCipreste},mangueira:{n:'🌳 Mangueira',snap:1,fn:tMangueira},arbusto:{n:'🌱 Arbusto',snap:1,fn:tArbusto},flores:{n:'🌸 Canteiro',snap:1,fn:tFlores},pconcreto:{n:'💡 Poste concreto',snap:1,fn:pConcreto},pduplo:{n:'💡 Poste duplo',snap:1,fn:pDuplo},pled:{n:'🔆 Poste LED',snap:1,fn:pLED},prural:{n:'🪵 Poste rural',snap:1,fn:pRural},pcolonial:{n:'🏮 Poste colonial',snap:1,fn:pColonial},ptorre:{n:'🏟️ Torre de refletores',snap:1,fn:pTorre}};
 const BCOLORS=[0xe0d3bd,0xf2f2f2,0xc9a37a,0x9cc3d5,0xd98c7a,0x8fbf8f,0xb9b9c4,0x5b6770];
 let bType='mercado',bDel=false,bRot=2,bColor=0xe0d3bd,bFloors=5,ghost=null,hoverG=null;const userObjs=[],undoStack=[],deletedOids=new Set();
-function buildObj(s){const g=new THREE.Group();g.userData.deletable=true;g.userData.spec=s;const prev=curGroup;curGroup=g;try{BTYPES[s.type].fn(s)}finally{curGroup=prev}g.position.set(s.x,0,s.z);g.rotation.y=s.rot*Math.PI/2;return g}
+function buildObj(s){const g=new THREE.Group();g.userData.deletable=true;g.userData.spec=s;const prev=curGroup;curGroup=g;gHouseInterior=null;try{BTYPES[s.type].fn(s)}finally{curGroup=prev}if(BTYPES[s.type].house&&gHouseInterior){g.userData.houseInterior=gHouseInterior;gHouseInterior.visible=false;const hid=s.houseId||('house_'+Math.round(s.x)+'_'+Math.round(s.z));s.houseId=hid;let p=properties.find(q=>q.id===hid);if(!p){p={id:hid,type:'casa',model:s.type,price:Number(s.salePrice)||HOUSE_TYPES[s.type].priceDefault,x:s.x,z:s.z,ownerUid:null,ownerName:null,locked:true,building:true,houseGroup:g,interior:g.userData.houseInterior,interiorX:s.x+500*Math.cos(s.rot*Math.PI/2)+500*Math.sin(s.rot*Math.PI/2),interiorZ:s.z-500*Math.sin(s.rot*Math.PI/2)+500*Math.cos(s.rot*Math.PI/2)};properties.push(p)}else{p.houseGroup=g;p.interior=g.userData.houseInterior;p.price=Number(s.salePrice)||p.price;p.model=s.type;p.interiorX=s.x+500*Math.cos(s.rot*Math.PI/2)+500*Math.sin(s.rot*Math.PI/2);p.interiorZ=s.z-500*Math.sin(s.rot*Math.PI/2)+500*Math.cos(s.rot*Math.PI/2)}}g.position.set(s.x,0,s.z);g.rotation.y=s.rot*Math.PI/2;return g}
 const rc=new THREE.Raycaster(),ndc=new THREE.Vector2(),gplane=new THREE.Plane(new THREE.Vector3(0,1,0),0);
 function setRay(e){const r=gameEl.getBoundingClientRect();ndc.set((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height)*2+1);rc.setFromCamera(ndc,camera)}
 function groundAt(e){setRay(e);const v=new THREE.Vector3();return rc.ray.intersectPlane(gplane,v)?v:null}
@@ -576,14 +628,14 @@ function refreshGhost(){if(ghost){scene.remove(ghost);ghost=null}if(!buildMode||
  ghost.traverse(m=>{if(m.isMesh){m.castShadow=false;const f=x=>{x=x.clone();x.transparent=true;x.opacity=.55;x.depthWrite=false;return x};m.material=Array.isArray(m.material)?m.material.map(f):f(m.material)}});scene.add(ghost)}
 function buildHover(e){if(!buildMode)return;if(bDel){const g=pickG(e);if(g!==hoverG){tint(hoverG,false);hoverG=g;tint(g,true)}return}
  const v=groundAt(e);if(v&&ghost){const s=curSpec(v);ghost.position.set(s.x,0,s.z)}}
-function removeG(g,silent){scene.remove(g);if(g.userData.prop){const i=properties.indexOf(g.userData.prop);if(i>=0)properties.splice(i,1)}
+function removeG(g,silent){scene.remove(g);if(g.userData.prop){const i=properties.indexOf(g.userData.prop);if(i>=0)properties.splice(i,1)}if(g.userData.spec&&g.userData.spec.houseId){const hid=g.userData.spec.houseId;const p=properties.find(q=>q.id===hid);if(p){const ix=properties.indexOf(p);if(ix>=0)properties.splice(ix,1)}if(firebaseOn&&isAdmin&&db)db.ref('trindade/properties/'+hid).remove().catch(()=>{})}
  if(g.userData.oid!==undefined)deletedOids.add(g.userData.oid);const i=userObjs.indexOf(g);if(i>=0)userObjs.splice(i,1)}
-function restoreG(g){scene.add(g);if(g.userData.prop&&!properties.includes(g.userData.prop))properties.push(g.userData.prop);if(g.userData.oid!==undefined)deletedOids.delete(g.userData.oid);if(g.userData.spec&&!userObjs.includes(g))userObjs.push(g)}
+function restoreG(g){scene.add(g);if(g.userData.prop&&!properties.includes(g.userData.prop))properties.push(g.userData.prop);if(g.userData.spec&&g.userData.spec.houseId&&!properties.some(p=>p.id===g.userData.spec.houseId)){const s=g.userData.spec;properties.push({id:s.houseId,type:'casa',model:s.type,price:Number(s.salePrice)||HOUSE_TYPES[s.type].priceDefault,x:s.x,z:s.z,ownerUid:null,ownerName:null,locked:true,building:true,houseGroup:g,interior:g.userData.houseInterior,interiorX:s.x+500*Math.cos(s.rot*Math.PI/2)+500*Math.sin(s.rot*Math.PI/2),interiorZ:s.z-500*Math.sin(s.rot*Math.PI/2)+500*Math.cos(s.rot*Math.PI/2)})}if(g.userData.oid!==undefined)deletedOids.delete(g.userData.oid);if(g.userData.spec&&!userObjs.includes(g))userObjs.push(g)}
 function saveBuild(){try{const specs=userObjs.filter(g=>g.userData.spec).map(g=>g.userData.spec);localStorage.setItem('trindade_build',JSON.stringify({objs:specs,del:[...deletedOids]}));if(firebaseOn&&isAdmin&&db)db.ref('trindade/buildings').set(specs).catch(e=>toast('Falha ao sincronizar construções: '+e.message));}catch(e){}}
 function loadBuild(){try{const d=JSON.parse(localStorage.getItem('trindade_build')||'null');if(!d)return;(d.del||[]).forEach(id=>{const g=worldGroups.find(x=>x.userData.oid===id);if(g)removeG(g)});(d.objs||[]).forEach(s=>{if(!BTYPES[s.type])return;const g=buildObj(s);scene.add(g);userObjs.push(g)})}catch(e){}}
 function buildTap(e){if(!buildMode)return;
  if(bDel){const g=pickG(e);if(!g){toast('Toque em um objeto para excluir');return}tint(g,false);hoverG=null;removeG(g);undoStack.push({k:'del',g});saveBuild();renderProperties();toast('Objeto excluído • ↩ desfaz');return}
- const v=groundAt(e);if(!v)return;const g=buildObj(curSpec(v));scene.add(g);userObjs.push(g);undoStack.push({k:'add',g});saveBuild()}
+ const v=groundAt(e);if(!v)return;let spec=curSpec(v);if(BTYPES[bType].house){const typ=HOUSE_TYPES[bType],raw=prompt('Preço de venda desta casa em STACOINS (mínimo 0):',String(typ.priceDefault));if(raw===null)return;const price=Number(raw.replace(/[^0-9]/g,''));if(!Number.isFinite(price)||price<0){toast('Valor de venda inválido.');return}spec.salePrice=Math.floor(price);spec.houseId='casa_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7)}const g=buildObj(spec);scene.add(g);userObjs.push(g);undoStack.push({k:'add',g});saveBuild();renderProperties()}
 function undoB(){const a=undoStack.pop();if(!a){toast('Nada para desfazer');return}if(a.k==='add')removeG(a.g);else restoreG(a.g);saveBuild();renderProperties()}
 function rotateB(){bRot=(bRot+1)%4;if(ghost)ghost.rotation.y=bRot*Math.PI/2}
 function syncUI(){const T=BTYPES[bType];$('bItems').querySelectorAll('button').forEach(b=>b.classList.toggle('sel',!bDel&&b.dataset.t===bType));$('bDelBtn').classList.toggle('sel',bDel);
