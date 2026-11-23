@@ -156,16 +156,70 @@ let appearance={skin:'#f1c49a',hair:'#171717',shirt:'#171f2d',pants:'#222831',na
 const properties=[];const remoteHumans={};
 let monza=null,hasMonza=false,drivingCar=false,nearDealer=null;
 try{hasMonza=localStorage.getItem('trindade_has_monza')==='1'}catch(e){}
-function createMonza(x,z){const g=new THREE.Group();
- // Forma aproximada do Monza 2 portas, montada em geometria 3D (não imagem plana).
- boxCar(g,0,.68,0,1.85,.62,4.15,0xf4f4f0);boxCar(g,0,1.12,-.52,1.58,.65,2.05,0xf4f4f0);
- boxCar(g,0,1.1,-.52,1.52,.52,1.88,0x52616b);boxCar(g,0,1.14,-.52,1.43,.43,1.76,0x28343b);
- boxCar(g,0,.45,-2.06,1.82,.28,.16,0x25282b);boxCar(g,0,.45,2.06,1.82,.28,.16,0x25282b);
- boxCar(g,0,.98,-2.1,1.68,.3,.12,0xd7d9d9);boxCar(g,0,.95,2.1,1.68,.3,.12,0x24272a);
- [-.94,.94].forEach(xx=>[-1.35,1.35].forEach(zz=>{const tire=new THREE.Mesh(new THREE.CylinderGeometry(.39,.39,.25,16),mat(0x17191a));tire.rotation.z=Math.PI/2;tire.position.set(xx,.4,zz);tire.castShadow=true;g.add(tire);const hub=new THREE.Mesh(new THREE.CylinderGeometry(.23,.23,.27,12),mat(0xb9bdc0));hub.rotation.z=Math.PI/2;hub.position.set(xx,.4,zz);g.add(hub)}));
- boxCar(g,-.62,.82,-2.13,.3,.28,.08,0xf8e9a5);boxCar(g,.62,.82,-2.13,.3,.28,.08,0xf8e9a5);
- boxCar(g,-.65,.78,2.12,.35,.28,.08,0xb82c28);boxCar(g,.65,.78,2.12,.35,.28,.08,0xb82c28);
- boxCar(g,0,.32,0,1.7,.18,3.5,0x25282a);g.position.set(x,0,z);g.userData.vehicle=true;scene.add(g);return g;
+function createMonza(x,z){
+ const g=new THREE.Group();
+ const paint=new THREE.MeshPhysicalMaterial({color:0xf3f3ee,metalness:.24,roughness:.28,clearcoat:.8,clearcoatRoughness:.16});
+ const trim=new THREE.MeshStandardMaterial({color:0x171a1c,roughness:.65});
+ const glass=new THREE.MeshPhysicalMaterial({color:0x263a46,metalness:.12,roughness:.12,transparent:true,opacity:.78,clearcoat:.8});
+ const chrome=new THREE.MeshStandardMaterial({color:0xb8bec1,metalness:.85,roughness:.22});
+ const rubber=new THREE.MeshStandardMaterial({color:0x111213,roughness:.92});
+ const lamp=new THREE.MeshPhysicalMaterial({color:0xe9f2f7,roughness:.15,metalness:.1,clearcoat:1});
+ function mesh(geo,material,x0,y0,z0){const m=new THREE.Mesh(geo,material);m.position.set(x0,y0,z0);m.castShadow=true;m.receiveShadow=true;g.add(m);return m}
+ function rounded(w,h,d,r,material,x0,y0,z0){const sh=new THREE.Shape();sh.moveTo(-w/2+r,-h/2);sh.lineTo(w/2-r,-h/2);sh.quadraticCurveTo(w/2,-h/2,w/2,-h/2+r);sh.lineTo(w/2,h/2-r);sh.quadraticCurveTo(w/2,h/2,w/2-r,h/2);sh.lineTo(-w/2+r,h/2);sh.quadraticCurveTo(-w/2,h/2,-w/2,h/2-r);sh.lineTo(-w/2,-h/2+r);sh.quadraticCurveTo(-w/2,-h/2,-w/2+r,-h/2);
+ const geo=new THREE.ExtrudeGeometry(sh,{depth:d,bevelEnabled:true,bevelSegments:2,steps:1,bevelSize:r*.35,bevelThickness:r*.35,curveSegments:5});geo.translate(0,0,-d/2);return mesh(geo,material,x0,y0,z0)}
+ // Perfil inferior e carroceria com bordas arredondadas, dianteira em -Z
+ rounded(1.84,.55,4.38,.11,paint,0,.69,0);
+ rounded(1.79,.24,3.86,.08,trim,0,.43,0); // saia/para-choques inferior
+ rounded(1.82,.25,.18,.055,trim,0,.53,-2.17);rounded(1.82,.25,.18,.055,trim,0,.53,2.17);
+ // Capô e porta-malas, levemente curvos
+ rounded(1.72,.12,1.28,.07,paint,0,.99,-1.42);rounded(1.68,.11,.88,.06,paint,0,.96,1.66);
+ // cabine em forma trapezoidal, vidro e pilares
+ const cabShape=new THREE.Shape();cabShape.moveTo(-1.82,.88);cabShape.lineTo(-1.30,1.60);cabShape.lineTo(-.44,1.68);cabShape.lineTo(.74,1.62);cabShape.lineTo(1.72,.91);cabShape.lineTo(1.72,.88);cabShape.closePath();
+ const cabGeo=new THREE.ExtrudeGeometry(cabShape,{depth:1.48,bevelEnabled:true,bevelSize:.035,bevelThickness:.035,bevelSegments:2});cabGeo.translate(0,0,-.74);cabGeo.rotateY(Math.PI/2);cabGeo.translate(0,0,0);
+ // geometry orientation adjusted: shape x is length axis, rotate to vehicle Z
+ const cab=mesh(cabGeo,paint,0,0,0);cab.position.set(0,0,0);cab.visible=false;
+ // cabin shell built as bevelled sections (roof, windshield/rear glass, pillars)
+ rounded(1.36,.12,1.22,.06,paint,0,1.66,-.22);
+ // front windshield and rear window angled panes
+ const pane=(verts,material)=>{const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(verts.flat(),3));geo.setIndex([0,1,2,0,2,3]);geo.computeVertexNormals();mesh(geo,material,0,0,0)};
+ pane([[-.66,1.15,-1.15],[.66,1.15,-1.15],[.60,1.57,-.68],[-.60,1.57,-.68]],glass);
+ pane([[-.60,1.57,.62],[.60,1.57,.62],[.68,1.12,1.12],[-.68,1.12,1.12]],glass);
+ // lateral windows and door framing on both sides
+ for(const side of [-1,1]){
+  const x=side*.76;
+  pane([[x,1.12,-1.04],[x,1.52,-.61],[x,1.52,.38],[x,1.12,.40]],glass);
+  pane([[x,1.52,.43],[x,1.52,.60],[x,1.12,1.03],[x,1.12,.43]],glass);
+  // B pillar and door outlines, black window gasket
+  rounded(.055,.48,.10,.015,trim,side*.79,1.34,.40);
+  rounded(.045,.38,2.25,.012,trim,side*.91,.70,0);
+  rounded(.14,.04,.28,.02,chrome,side*.925,.91,.35); // door handle
+  rounded(.12,.18,.14,.025,trim,side*.94,1.15,-1.18); // mirror
+ }
+ // front/rear fascias, grille, lights, badges
+ rounded(1.68,.24,.13,.035,trim,0,.55,-2.22);
+ rounded(.78,.17,.055,.02,chrome,0,.78,-2.235);
+ rounded(.58,.10,.06,.015,trim,0,.78,-2.25);
+ for(const sx of [-.62,.62]){rounded(.38,.18,.08,.03,lamp,sx,.83,-2.23);rounded(.28,.06,.07,.02,new THREE.MeshStandardMaterial({color:0xffd9a1}),sx,.72,-2.23)}
+ rounded(1.72,.20,.13,.03,trim,0,.55,2.22);
+ for(const sx of [-.64,.64]){rounded(.38,.22,.08,.025,new THREE.MeshStandardMaterial({color:0xb52b24}),sx,.78,2.23);rounded(.22,.12,.07,.02,new THREE.MeshStandardMaterial({color:0xf2b25c}),sx,.68,2.23)}
+ rounded(.52,.17,.05,.02,chrome,0,.79,2.24);rounded(.26,.06,.04,.01,trim,0,.82,2.25);
+ // rodas: pneu, aro metálico, cubo e raios na face externa
+ for(const xx of [-.94,.94])for(const zz of [-1.42,1.42]){
+  const wg=new THREE.Group();wg.position.set(xx,.43,zz);g.add(wg);
+  function wheelMesh(geo,material,x1,y1,z1){const m=new THREE.Mesh(geo,material);m.position.set(x1,y1,z1);m.castShadow=true;m.receiveShadow=true;wg.add(m);return m}
+  const tire=wheelMesh(new THREE.CylinderGeometry(.39,.39,.24,32),rubber,0,0,0);tire.rotation.z=Math.PI/2;
+  const rim=wheelMesh(new THREE.CylinderGeometry(.285,.285,.25,24),chrome,0,0,0);rim.rotation.z=Math.PI/2;
+  const inset=wheelMesh(new THREE.CylinderGeometry(.235,.235,.255,24),mat(0x7d8589,.35),0,0,0);inset.rotation.z=Math.PI/2;
+  const hub=wheelMesh(new THREE.CylinderGeometry(.09,.09,.27,16),chrome,0,0,0);hub.rotation.z=Math.PI/2;
+  // Face visible outward, 8 spoke details
+  for(let i=0;i<8;i++){const sp=wheelMesh(new THREE.BoxGeometry(.035,.32,.04),chrome,0,0,0);sp.rotation.y=i*Math.PI/4;sp.position.z=xx>0?.14:-.14;}
+ }
+ // interiores visíveis através dos vidros
+ rounded(1.25,.16,1.9,.05,trim,0,.95,.05);rounded(.12,.5,.38,.04,trim,-.53,1.18,-.48);rounded(.12,.5,.38,.04,trim,.53,1.18,-.48);
+ for(const sx of [-.38,.38]){rounded(.48,.42,.50,.08,mat(0x343a3f),sx,.95,-.35);rounded(.48,.36,.50,.08,mat(0x343a3f),sx,.88,.55)}
+ rounded(.65,.08,.22,.03,trim,0,1.18,-.8);rounded(.58,.10,.08,.02,mat(0x555c61),0,1.22,-.8);
+ const steering=mesh(new THREE.TorusGeometry(.22,.025,8,24),trim,-.38,1.18,-.82);steering.rotation.x=Math.PI/2;
+ g.position.set(x,0,z);g.userData.vehicle=true;scene.add(g);return g;
 }
 function boxCar(g,x,y,z,w,h,d,color){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(color,.45));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;g.add(m);return m}
 function removeMonza(){if(monza){scene.remove(monza);monza=null;drivingCar=false;player.visible=true}}
