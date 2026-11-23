@@ -215,7 +215,30 @@ function updateCamera(dt){
 // Colisão do personagem contra construções posicionadas (ADM/local/remotas).
 const PLAYER_RADIUS=.48, PLAYER_HEIGHT=2.15;
 function visibleInTree(obj){for(let n=obj;n;n=n.parent)if(n.visible===false)return false;return true}
-function collidesWithBuild(px,pz){if(buildMode||spec||insideHouse)return false;const playerMinY=0,playerMaxY=PLAYER_HEIGHT;for(const mesh of worldBuildingColliders){if(!mesh||!mesh.parent||!visibleInTree(mesh))continue;mesh.updateMatrixWorld(true);if(!mesh.geometry.boundingBox)mesh.geometry.computeBoundingBox();const wb=mesh.geometry.boundingBox.clone().applyMatrix4(mesh.matrixWorld);if(wb.max.y<playerMinY||wb.min.y>playerMaxY)continue;if(px>wb.min.x-PLAYER_RADIUS&&px<wb.max.x+PLAYER_RADIUS&&pz>wb.min.z-PLAYER_RADIUS&&pz<wb.max.z+PLAYER_RADIUS)return true;}for(const group of userObjs){if(!group||!group.parent||!visibleInTree(group))continue;group.updateMatrixWorld(true);let hit=false;group.traverse(mesh=>{if(hit||!mesh.isMesh||!visibleInTree(mesh))return;const geo=mesh.geometry;if(!geo.boundingBox)geo.computeBoundingBox();const b=geo.boundingBox;if(!b)return;const wb=b.clone().applyMatrix4(mesh.matrixWorld);if(wb.max.y<playerMinY||wb.min.y>playerMaxY)return;if(px>wb.min.x-PLAYER_RADIUS&&px<wb.max.x+PLAYER_RADIUS&& pz>wb.min.z-PLAYER_RADIUS&&pz<wb.max.z+PLAYER_RADIUS)hit=true;});if(hit)return true;}return false}
+function collidesWithBuild(px,pz){if(buildMode||spec)return false;if(insideHouse)return collidesWithInteriorWalls(px,pz);const playerMinY=0,playerMaxY=PLAYER_HEIGHT;for(const mesh of worldBuildingColliders){if(!mesh||!mesh.parent||!visibleInTree(mesh))continue;mesh.updateMatrixWorld(true);if(!mesh.geometry.boundingBox)mesh.geometry.computeBoundingBox();const wb=mesh.geometry.boundingBox.clone().applyMatrix4(mesh.matrixWorld);if(wb.max.y<playerMinY||wb.min.y>playerMaxY)continue;if(px>wb.min.x-PLAYER_RADIUS&&px<wb.max.x+PLAYER_RADIUS&&pz>wb.min.z-PLAYER_RADIUS&&pz<wb.max.z+PLAYER_RADIUS)return true;}for(const group of userObjs){if(!group||!group.parent||!visibleInTree(group))continue;group.updateMatrixWorld(true);let hit=false;group.traverse(mesh=>{if(hit||!mesh.isMesh||!visibleInTree(mesh))return;const geo=mesh.geometry;if(!geo.boundingBox)geo.computeBoundingBox();const b=geo.boundingBox;if(!b)return;const wb=b.clone().applyMatrix4(mesh.matrixWorld);if(wb.max.y<playerMinY||wb.min.y>playerMaxY)return;if(px>wb.min.x-PLAYER_RADIUS&&px<wb.max.x+PLAYER_RADIUS&& pz>wb.min.z-PLAYER_RADIUS&&pz<wb.max.z+PLAYER_RADIUS)hit=true;});if(hit)return true;}return false}
+
+// Colisão apenas com as paredes do interior (móveis continuam atravessáveis).
+function collidesWithInteriorWalls(px,pz){
+ if(!insideHouse||!insideHouse.interior)return false;
+ const interior=insideHouse.interior;
+ interior.updateMatrixWorld(true);
+ const local=interior.worldToLocal(new THREE.Vector3(px,0,pz));
+ const x=local.x,z=local.z,centerX=500,centerZ=500,r=PLAYER_RADIUS;
+ // Laterais e parede de trás.
+ if(x>centerX-5.5-r&&x<centerX-5.5+r&&z>centerZ-5-r&&z<centerZ+5+r)return true;
+ if(x>centerX+5.5-r&&x<centerX+5.5+r&&z>centerZ-5-r&&z<centerZ+5+r)return true;
+ if(z>centerZ+5-r&&z<centerZ+5+r&&x>centerX-5.5-r&&x<centerX+5.5+r)return true;
+ // Parede frontal com abertura central da porta; colisão somente nos trechos laterais.
+ const frontZ=centerZ-5;
+ if(z>frontZ-r&&z<frontZ+r){
+   const doorCenter=centerX-.725,doorHalfWidth=.95;
+   const leftEnd=centerX-5.5,rightEnd=centerX+5.5;
+   const touchesLeft=x>leftEnd-r&&x<doorCenter-doorHalfWidth+r;
+   const touchesRight=x>doorCenter+doorHalfWidth-r&&x<rightEnd+r;
+   if(touchesLeft||touchesRight)return true;
+ }
+ return false;
+}
 function movePlayerWithCollision(dx,dz){const oldX=player.position.x,oldZ=player.position.z;const nextX=oldX+dx;if(!collidesWithBuild(nextX,oldZ))player.position.x=nextX;else vel.x=0;const nextZ=oldZ+dz;if(!collidesWithBuild(player.position.x,nextZ))player.position.z=nextZ;else vel.z=0;}
 function animate(){
  requestAnimationFrame(animate);
