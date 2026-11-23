@@ -617,14 +617,30 @@ const BTYPES={
  arvore:{n:'🌳 Árvore',snap:1,fn:()=>tree(0,0)},poste:{n:'💡 Poste',snap:1,fn:()=>lamp(0,0)},araucaria:{n:'🌲 Araucária',snap:1,fn:tAraucaria},palmeira:{n:'🌴 Palmeira',snap:1,fn:tPalmeira},ipe:{n:'🌼 Ipê amarelo',snap:1,fn:tIpe},eucalipto:{n:'🌿 Eucalipto',snap:1,fn:tEucalipto},pinus:{n:'🎄 Pinus',snap:1,fn:tPinus},cipreste:{n:'🌲 Cipreste',snap:1,fn:tCipreste},mangueira:{n:'🌳 Mangueira',snap:1,fn:tMangueira},arbusto:{n:'🌱 Arbusto',snap:1,fn:tArbusto},flores:{n:'🌸 Canteiro',snap:1,fn:tFlores},pconcreto:{n:'💡 Poste concreto',snap:1,fn:pConcreto},pduplo:{n:'💡 Poste duplo',snap:1,fn:pDuplo},pled:{n:'🔆 Poste LED',snap:1,fn:pLED},prural:{n:'🪵 Poste rural',snap:1,fn:pRural},pcolonial:{n:'🏮 Poste colonial',snap:1,fn:pColonial},ptorre:{n:'🏟️ Torre de refletores',snap:1,fn:pTorre}};
 const BCOLORS=[0xe0d3bd,0xf2f2f2,0xc9a37a,0x9cc3d5,0xd98c7a,0x8fbf8f,0xb9b9c4,0x5b6770];
 let bType='mercado',bDel=false,bRot=2,bColor=0xe0d3bd,bFloors=5,ghost=null,hoverG=null;const userObjs=[],undoStack=[],deletedOids=new Set();
-function buildObj(s){const g=new THREE.Group();g.userData.deletable=true;g.userData.spec=s;const prev=curGroup;curGroup=g;gHouseInterior=null;try{BTYPES[s.type].fn(s)}finally{curGroup=prev}if(BTYPES[s.type].house&&gHouseInterior){g.userData.houseInterior=gHouseInterior;gHouseInterior.visible=false;const hid=s.houseId||('house_'+Math.round(s.x)+'_'+Math.round(s.z));s.houseId=hid;let p=properties.find(q=>q.id===hid);if(!p){p={id:hid,type:'casa',model:s.type,price:Number(s.salePrice)||HOUSE_TYPES[s.type].priceDefault,x:s.x,z:s.z,ownerUid:null,ownerName:null,locked:true,building:true,houseGroup:g,interior:g.userData.houseInterior,interiorX:s.x+500*Math.cos(s.rot*Math.PI/2)+500*Math.sin(s.rot*Math.PI/2),interiorZ:s.z-500*Math.sin(s.rot*Math.PI/2)+500*Math.cos(s.rot*Math.PI/2)};properties.push(p)}else{p.houseGroup=g;p.interior=g.userData.houseInterior;p.price=Number(s.salePrice)||p.price;p.model=s.type;p.interiorX=s.x+500*Math.cos(s.rot*Math.PI/2)+500*Math.sin(s.rot*Math.PI/2);p.interiorZ=s.z-500*Math.sin(s.rot*Math.PI/2)+500*Math.cos(s.rot*Math.PI/2)}}g.position.set(s.x,0,s.z);g.rotation.y=s.rot*Math.PI/2;return g}
+function buildObj(s,registerProperty=true){
+ const g=new THREE.Group();g.userData.deletable=true;g.userData.spec=s;
+ const prev=curGroup;curGroup=g;gHouseInterior=null;
+ try{BTYPES[s.type].fn(s)}finally{curGroup=prev}
+ if(BTYPES[s.type].house&&gHouseInterior){
+  g.userData.houseInterior=gHouseInterior;gHouseInterior.visible=false;
+  const hid=s.houseId||('house_'+Math.round(s.x)+'_'+Math.round(s.z));s.houseId=hid;
+  if(registerProperty){
+   const ix=s.x+500*Math.cos(s.rot*Math.PI/2)+500*Math.sin(s.rot*Math.PI/2);
+   const iz=s.z-500*Math.sin(s.rot*Math.PI/2)+500*Math.cos(s.rot*Math.PI/2);
+   let p=properties.find(q=>q.id===hid);
+   if(!p){p={id:hid,type:'casa',model:s.type,price:Number(s.salePrice??HOUSE_TYPES[s.type].priceDefault),x:s.x,z:s.z,ownerUid:null,ownerName:null,locked:true,building:true,houseGroup:g,interior:g.userData.houseInterior,interiorX:ix,interiorZ:iz};properties.push(p)}
+   else{p.houseGroup=g;p.interior=g.userData.houseInterior;p.price=Number(s.salePrice??p.price);p.model=s.type;p.x=s.x;p.z=s.z;p.interiorX=ix;p.interiorZ=iz;p.building=true;p.locked=p.locked!==false}
+  }
+ }
+ g.position.set(s.x,0,s.z);g.rotation.y=s.rot*Math.PI/2;return g
+}
 const rc=new THREE.Raycaster(),ndc=new THREE.Vector2(),gplane=new THREE.Plane(new THREE.Vector3(0,1,0),0);
 function setRay(e){const r=gameEl.getBoundingClientRect();ndc.set((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height)*2+1);rc.setFromCamera(ndc,camera)}
 function groundAt(e){setRay(e);const v=new THREE.Vector3();return rc.ray.intersectPlane(gplane,v)?v:null}
 function curSpec(v){const sn=BTYPES[bType].snap;return{type:bType,color:bColor,floors:bFloors,rot:bRot,x:Math.round(v.x/sn)*sn,z:Math.round(v.z/sn)*sn}}
 function pickG(e){setRay(e);const list=scene.children.filter(c=>c.userData.deletable);const hit=rc.intersectObjects(list,true)[0];if(!hit)return null;let o=hit.object;while(o&&!o.userData.deletable)o=o.parent;return o}
 function tint(g,on){if(!g)return;g.traverse(m=>{if(m.isMesh){(Array.isArray(m.material)?m.material:[m.material]).forEach(x=>{if(x.emissive)x.emissive.setHex(on?0xaa1111:0)})}})}
-function refreshGhost(){if(ghost){scene.remove(ghost);ghost=null}if(!buildMode||bDel)return;const p=ghost&&ghost.position;ghost=buildObj({type:bType,color:bColor,floors:bFloors,rot:bRot,x:player.position.x,z:player.position.z-12});ghost.userData.deletable=false;
+function refreshGhost(){if(ghost){scene.remove(ghost);ghost=null}if(!buildMode||bDel)return;const p=ghost&&ghost.position;ghost=buildObj({type:bType,color:bColor,floors:bFloors,rot:bRot,x:player.position.x,z:player.position.z-12},false);ghost.userData.deletable=false;
  ghost.traverse(m=>{if(m.isMesh){m.castShadow=false;const f=x=>{x=x.clone();x.transparent=true;x.opacity=.55;x.depthWrite=false;return x};m.material=Array.isArray(m.material)?m.material.map(f):f(m.material)}});scene.add(ghost)}
 function buildHover(e){if(!buildMode)return;if(bDel){const g=pickG(e);if(g!==hoverG){tint(hoverG,false);hoverG=g;tint(g,true)}return}
  const v=groundAt(e);if(v&&ghost){const s=curSpec(v);ghost.position.set(s.x,0,s.z)}}
