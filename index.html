@@ -170,7 +170,7 @@ const vel={x:0,z:0};let walkPhase=0,frameN=0;
 let camYaw=0,camPitch=.5,camDist=11;const camTarget={x:START.x,y:1.6,z:START.z};
 let appearance={skin:'#f1c49a',hair:'#171717',shirt:'#171f2d',pants:'#222831',name:'Visitante'};try{const savedName=localStorage.getItem('trindade_player_name');if(savedName)appearance.name=savedName.slice(0,24)}catch(e){}
 const properties=[];const remoteHumans={};
-let monza=null,hasMonza=false,drivingCar=false,nearDealer=null;const carInput={left:false,right:false,throttle:false,brake:false};let carSpeed=0;
+let monza=null,hasMonza=false,drivingCar=false,nearDealer=null;const carInput={left:false,right:false,throttle:false,brake:false};let carSpeed=0,carLateral=0;
 try{hasMonza=localStorage.getItem('trindade_has_monza')==='1'}catch(e){}
 function createMonza(x,z){
  const g=new THREE.Group();
@@ -338,20 +338,26 @@ function animate(){
  let tx=(cy*ix+sy*iz)*maxSp,tz=(-sy*ix+cy*iz)*maxSp;
  if(drivingCar&&monza){
    const throttle=carInput.throttle?1:0,brake=carInput.brake?1:0,steer=(carInput.right?1:0)-(carInput.left?1:0);
-   // Stable arcade physics: restrained acceleration, reverse, and capped steering rotation.
-   if(throttle)carSpeed=Math.min(18,carSpeed+5.2*dt);
-   if(brake){if(carSpeed>0)carSpeed=Math.max(0,carSpeed-11*dt);else carSpeed=Math.max(-4.2,carSpeed-3.2*dt)}
-   if(!throttle&&!brake)carSpeed*=Math.exp(-1.9*dt);
-   if(Math.abs(carSpeed)<.035)carSpeed=0;
-   const steerAngle=steer*.34;
+   // Professional arcade vehicle dynamics: longitudinal acceleration, engine drag,
+   // progressive steering, front-wheel angle, and tire-grip correction.
+   const absSpeed=Math.abs(carSpeed);
+   if(throttle)carSpeed=Math.min(24,carSpeed+8.0*dt);
+   if(brake){if(carSpeed>0)carSpeed=Math.max(0,carSpeed-16*dt);else carSpeed=Math.max(-6,carSpeed-4.5*dt);}
+   if(!throttle&&!brake){const drag=1.15+absSpeed*.055;carSpeed*=Math.exp(-drag*dt);}
+   if(Math.abs(carSpeed)<.025)carSpeed=0;
+   const speedBlend=Math.min(absSpeed/16,1);
+   const steerAngle=steer*(.48-.19*speedBlend);
    if(monza.userData.wheels)monza.userData.wheels.forEach(w=>{if(w.front)w.group.rotation.y=steerAngle;});
-   // Rotation is speed-sensitive but strictly capped, preventing the car from spinning.
-   const wheelBase=2.84,yawRaw=(carSpeed/wheelBase)*Math.tan(steerAngle);
-   const yawRate=Math.max(-.62,Math.min(.62,yawRaw));
-   monza.rotation.y+=yawRate*dt;
+   const wheelBase=2.65;
+   let yawRate=(Math.abs(carSpeed)>.12)?(carSpeed/wheelBase)*Math.tan(steerAngle):0;
+   yawRate=Math.max(-.95,Math.min(.95,yawRate));
+   if(steer!==0&&Math.abs(carSpeed)>.12)monza.rotation.y+=yawRate*dt;
+   const grip=Math.exp(-Math.min(9,5.5+absSpeed*.12)*dt);
+   carLateral*=grip;
    const forwardX=Math.sin(monza.rotation.y)*carSpeed,forwardZ=-Math.cos(monza.rotation.y)*carSpeed;
-   tx=forwardX;tz=forwardZ;vel.x=tx;vel.z=tz;
- }
+   const sideX=Math.cos(monza.rotation.y)*carLateral,sideZ=Math.sin(monza.rotation.y)*carLateral;
+   tx=forwardX+sideX;tz=forwardZ+sideZ;vel.x=tx;vel.z=tz;
+}
  else{const acc=1-Math.exp(-dt*(len>0?11:14));if(spec){specVel.x+=(tx-specVel.x)*acc;specVel.z+=(tz-specVel.z)*acc;specPos.x+=specVel.x*dt;specPos.z+=specVel.z*dt;specPos.y=clamp(specPos.y+(specY+((keys.e?1:0)-(keys.q?1:0)))*clamp(specPos.y,6,60)*1.2*dt,2,150);vel.x+=(0-vel.x)*acc;vel.z+=(0-vel.z)*acc}else{vel.x+=(tx-vel.x)*acc;vel.z+=(tz-vel.z)*acc}}
  if(drivingCar&&monza){const nx=monza.position.x+vel.x*dt,nz=monza.position.z+vel.z*dt;if(!collidesWithBuild(nx,nz)){monza.position.x=nx;monza.position.z=nz;}else{carSpeed*=.22;vel.x=vel.z=0;}player.position.copy(monza.position);player.rotation.copy(monza.rotation)}else if(!spec)movePlayerWithCollision(vel.x*dt,vel.z*dt);else{specPos.x+=specVel.x*dt;specPos.z+=specVel.z*dt;}const fo=spec?specPos:player.position,gx=Math.round(fo.x/4)*4,gz=Math.round(fo.z/4)*4;groundMesh.position.set(gx,0,gz);sunLight.position.set(gx-45,75,gz+35);sunLight.target.position.set(gx,0,gz);
  const sp=Math.hypot(vel.x,vel.z);
@@ -460,7 +466,7 @@ $('chatForm').addEventListener('submit',async e=>{e.preventDefault();const input
 
 function loadScript(src){return new Promise((res,rej)=>{let s=document.createElement('script');s.src=src;s.onload=()=>{clearTimeout(t);res()};s.onerror=()=>{clearTimeout(t);rej(Error('Falha ao carregar Firebase ('+src.split('/').slice(-2).join('/')+'). Verifique a internet.'))};let t=setTimeout(()=>{s.remove();rej(Error('Tempo esgotado ao carregar Firebase. Verifique internet ou bloqueio do navegador.'))},15000);document.head.appendChild(s)})}
 function open(id){$(id).classList.add('open')}document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$(b.dataset.close).classList.remove('open'));
-$('buyBtn').onclick=buyProperty;$('buyMonza').onclick=()=>{if(hasMonza){toast('Você já possui o Monza!');return}hasMonza=true;localStorage.setItem('trindade_has_monza','1');$('dealerModal').classList.remove('open');monza=createMonza(player.position.x+5,player.position.z+2);toast('Monza adquirido por 0 STACOINS!');};$('enterBtn').onclick=()=>{if(monza&&hasMonza&&Math.hypot(monza.position.x-player.position.x,monza.position.z-player.position.z)<5){drivingCar=true;document.body.classList.add('driving');carSpeed=0;vel.x=vel.z=0;player.visible=false;camDist=10;toast('Você entrou no Monza. Use os botões de direção, acelerar e frear.');return}if(nearProp&&nearProp.building&&nearProp.ownerUid===uid&&!nearProp.locked)enterHouse(nearProp);else toast('Você precisa ser proprietário e destrancar a porta.')};$('actBtn').onclick=()=>{if(drivingCar){drivingCar=false;document.body.classList.remove('driving');carSpeed=0;for(const k in carInput)carInput[k]=false;document.querySelectorAll('[data-car-control]').forEach(b=>b.classList.remove('active'));player.visible=true;player.position.set(monza.position.x+2,0,monza.position.z);vel.x=vel.z=0;toast('Você saiu do veículo.');return}if(nearDealer){$('dealerModal').classList.add('open');return}if(insideHouse){exitHouse();return}if(!nearProp)return;if(nearProp.building){if(!nearProp.ownerUid){showProperty(nearProp,true);return}if(nearProp.ownerUid===uid){nearProp.locked=!nearProp.locked;const status=nearProp.locked?'trancada':'destrancada';if(firebaseOn&&db)db.ref('trindade/properties/'+nearProp.id).update({locked:nearProp.locked}).catch(e=>toast('Falha ao salvar fechadura: '+e.message));toast('Porta '+status+'.');renderProperties();return}if(nearProp.locked){toast('Esta casa está trancada pelo proprietário.');return}enterHouse(nearProp);return}showProperty(nearProp,true)};
+$('buyBtn').onclick=buyProperty;$('buyMonza').onclick=()=>{if(hasMonza){toast('Você já possui o Monza!');return}hasMonza=true;localStorage.setItem('trindade_has_monza','1');$('dealerModal').classList.remove('open');monza=createMonza(player.position.x+5,player.position.z+2);toast('Monza adquirido por 0 STACOINS!');};$('enterBtn').onclick=()=>{if(monza&&hasMonza&&Math.hypot(monza.position.x-player.position.x,monza.position.z-player.position.z)<5){drivingCar=true;document.body.classList.add('driving');carSpeed=0;carLateral=0;vel.x=vel.z=0;player.visible=false;camDist=10;toast('Você entrou no Monza. Use os botões de direção, acelerar e frear.');return}if(nearProp&&nearProp.building&&nearProp.ownerUid===uid&&!nearProp.locked)enterHouse(nearProp);else toast('Você precisa ser proprietário e destrancar a porta.')};$('actBtn').onclick=()=>{if(drivingCar){drivingCar=false;document.body.classList.remove('driving');carSpeed=0;carLateral=0;for(const k in carInput)carInput[k]=false;document.querySelectorAll('[data-car-control]').forEach(b=>b.classList.remove('active'));player.visible=true;player.position.set(monza.position.x+2,0,monza.position.z);vel.x=vel.z=0;toast('Você saiu do veículo.');return}if(nearDealer){$('dealerModal').classList.add('open');return}if(insideHouse){exitHouse();return}if(!nearProp)return;if(nearProp.building){if(!nearProp.ownerUid){showProperty(nearProp,true);return}if(nearProp.ownerUid===uid){nearProp.locked=!nearProp.locked;const status=nearProp.locked?'trancada':'destrancada';if(firebaseOn&&db)db.ref('trindade/properties/'+nearProp.id).update({locked:nearProp.locked}).catch(e=>toast('Falha ao salvar fechadura: '+e.message));toast('Porta '+status+'.');renderProperties();return}if(nearProp.locked){toast('Esta casa está trancada pelo proprietário.');return}enterHouse(nearProp);return}showProperty(nearProp,true)};
 $('propertiesBtn').onclick=()=>{renderProperties();open('propertiesModal')};$('myHomeBtn').onclick=()=>{renderProperties();$('propertyList').querySelectorAll('.property-card').forEach((el,i)=>{if(properties[i].ownerUid!==uid)el.style.display='none'});open('propertiesModal')};
 $('customBtn').onclick=$('customNav').onclick=()=>{ $('nameInput').value=appearance.name;open('customModal')};
 $('settingsBtn').onclick=()=>{$('settingsName').value=appearance.name||'';open('settingsModal')};$('hudName').textContent=appearance.name;$('saveSettingsName').onclick=()=>{const chosen=$('settingsName').value.trim().slice(0,24)||'Visitante';appearance.name=chosen;localStorage.setItem('trindade_player_name',chosen);localStorage.setItem('trindade_avatar',JSON.stringify(appearance));$('hudName').textContent=chosen;$('nameInput').value=chosen;if(firebaseOn&&db)db.ref('trindade/players/'+uid).update({name:chosen}).catch(()=>{});$('settingsModal').classList.remove('open');toast('Nome atualizado!')};$('connectBtn').onclick=()=>toast('O multiplayer é conectado pelo login.');$('socialBtn').onclick=()=>open('socialModal');
@@ -476,7 +482,7 @@ $('fsBtn').onclick=goFull;$('rotateFs').onclick=goFull;
 
 
 // Controles do carro: botões de toque/mouse ficam pressionados enquanto segurar.
-const carButtons=document.querySelectorAll('[data-car-control]');carButtons.forEach(btn=>{const key=btn.dataset.carControl;const press=e=>{if(!drivingCar)return;e.preventDefault();try{btn.setPointerCapture(e.pointerId)}catch(_){}carInput[key]=true;btn.classList.add('active')};const release=e=>{if(e)e.preventDefault();carInput[key]=false;btn.classList.remove('active')};btn.addEventListener('pointerdown',press);btn.addEventListener('pointerup',release);btn.addEventListener('pointercancel',release);btn.addEventListener('lostpointercapture',release)});
+const carButtons=document.querySelectorAll('[data-car-control]');carButtons.forEach(btn=>{const key=btn.dataset.carControl;const press=e=>{if(!drivingCar)return;e.preventDefault();try{btn.setPointerCapture(e.pointerId)}catch(_){}carInput[key]=true;btn.classList.add('active')};const release=e=>{if(e)e.preventDefault();carInput[key]=false;btn.classList.remove('active')};btn.addEventListener('pointerdown',press);btn.addEventListener('pointerup',release);btn.addEventListener('pointercancel',release);btn.addEventListener('lostpointercapture',release)});window.addEventListener('blur',()=>{for(const k in carInput)carInput[k]=false;carButtons.forEach(b=>b.classList.remove('active'));});
 
 // Correr
 const runBtn=$('runBtn');const setRun=v=>{running=v;runBtn.classList.toggle('on',v)};
