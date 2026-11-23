@@ -109,6 +109,7 @@
  <form id="chatForm"><input id="chatInput" maxlength="200" placeholder="Digite uma mensagem..." autocomplete="off"><button type="submit">Enviar</button></form>
 </div>
 
+<div class="modal" id="dealerModal"><div class="dialog"><h2>🚗 Concessionária Trindade</h2><p>Veículos disponíveis para adquirir.</p><div class="property-card"><b>Chevrolet Monza 2 portas • Branco</b><small>Modelo inicial inspirado na foto enviada</small><h3 style="margin:10px 0;color:#54e0b0">GRÁTIS — 0 STACOINS</h3><button class="green" id="buyMonza" style="width:100%">Adquirir veículo</button></div><button class="secondary" data-close="dealerModal" style="width:100%;margin-top:10px">Fechar</button></div></div>
 <div class="modal" id="housePriceModal"><div class="dialog"><h2>🏠 Definir preço da casa</h2><p>Escolha o valor de venda desta casa em STACOINS.</p><label for="housePriceInput">Preço de venda</label><input id="housePriceInput" type="number" min="0" step="1" value="2500" style="width:100%;box-sizing:border-box;padding:12px;border-radius:12px"><div class="row" style="margin-top:12px"><button class="secondary" id="housePriceCancel">Cancelar</button><button id="housePriceConfirm">Confirmar construção</button></div></div></div>
 <div class="toast" id="toast"></div>
 <div id="rotate"><div class="ph">📱</div><h2>Gire o celular</h2><p>Trindade Online funciona em tela horizontal. Vire o aparelho de lado (e desative o bloqueio de rotação, se precisar).</p><button id="rotateFs">Tela cheia / horizontal</button></div>
@@ -152,7 +153,23 @@ let spec=false,specY=0;const specPos={x:0,y:18,z:0},specVel={x:0,z:0};const joyV
 const vel={x:0,z:0};let walkPhase=0,frameN=0;
 let camYaw=0,camPitch=.5,camDist=11;const camTarget={x:START.x,y:1.6,z:START.z};
 let appearance={skin:'#f1c49a',hair:'#171717',shirt:'#171f2d',pants:'#222831',name:'Visitante'};try{const savedName=localStorage.getItem('trindade_player_name');if(savedName)appearance.name=savedName.slice(0,24)}catch(e){}
-const properties=[];const remoteHumans={};let remoteBuildIds=new Set();
+const properties=[];const remoteHumans={};
+let monza=null,hasMonza=false,drivingCar=false,nearDealer=null;
+try{hasMonza=localStorage.getItem('trindade_has_monza')==='1'}catch(e){}
+function createMonza(x,z){const g=new THREE.Group();
+ // Forma aproximada do Monza 2 portas, montada em geometria 3D (não imagem plana).
+ boxCar(g,0,.68,0,1.85,.62,4.15,0xf4f4f0);boxCar(g,0,1.12,-.52,1.58,.65,2.05,0xf4f4f0);
+ boxCar(g,0,1.1,-.52,1.52,.52,1.88,0x52616b);boxCar(g,0,1.14,-.52,1.43,.43,1.76,0x28343b);
+ boxCar(g,0,.45,-2.06,1.82,.28,.16,0x25282b);boxCar(g,0,.45,2.06,1.82,.28,.16,0x25282b);
+ boxCar(g,0,.98,-2.1,1.68,.3,.12,0xd7d9d9);boxCar(g,0,.95,2.1,1.68,.3,.12,0x24272a);
+ [-.94,.94].forEach(xx=>[-1.35,1.35].forEach(zz=>{const tire=new THREE.Mesh(new THREE.CylinderGeometry(.39,.39,.25,16),mat(0x17191a));tire.rotation.z=Math.PI/2;tire.position.set(xx,.4,zz);tire.castShadow=true;g.add(tire);const hub=new THREE.Mesh(new THREE.CylinderGeometry(.23,.23,.27,12),mat(0xb9bdc0));hub.rotation.z=Math.PI/2;hub.position.set(xx,.4,zz);g.add(hub)}));
+ boxCar(g,-.62,.82,-2.13,.3,.28,.08,0xf8e9a5);boxCar(g,.62,.82,-2.13,.3,.28,.08,0xf8e9a5);
+ boxCar(g,-.65,.78,2.12,.35,.28,.08,0xb82c28);boxCar(g,.65,.78,2.12,.35,.28,.08,0xb82c28);
+ boxCar(g,0,.32,0,1.7,.18,3.5,0x25282a);g.position.set(x,0,z);g.userData.vehicle=true;scene.add(g);return g;
+}
+function boxCar(g,x,y,z,w,h,d,color){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(color,.45));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;g.add(m);return m}
+function removeMonza(){if(monza){scene.remove(monza);monza=null;drivingCar=false;player.visible=true}}
+let remoteBuildIds=new Set();
 let groundMesh,sunLight,buildMode=false,curGroup=null,oidN=0;const worldGroups=[];let isAdmin=false;const ADMIN_UID='bsaez769YeMzZpKDEfPm4vSBcOp2';
 const add=o=>(curGroup||scene).add(o);
 function makeWorld(){
@@ -207,7 +224,7 @@ function refreshAvatar(){if(!player)return;const pos=player.position.clone(),ry=
 // Câmera orbital em volta do jogador (arrastar = olhar ao redor)
 function updateCamera(dt){
  const k=1-Math.exp(-dt*14);
- const fx=spec?specPos.x:player.position.x,fz=spec?specPos.z:player.position.z,fy=spec?specPos.y:1.7;camTarget.x+=(fx-camTarget.x)*k;camTarget.z+=(fz-camTarget.z)*k;camTarget.y+=(fy-camTarget.y)*k;
+ const fx=drivingCar&&monza?monza.position.x:spec?specPos.x:player.position.x,fz=drivingCar&&monza?monza.position.z:spec?specPos.z:player.position.z,fy=drivingCar&&monza?1.2:spec?specPos.y:1.7;camTarget.x+=(fx-camTarget.x)*k;camTarget.z+=(fz-camTarget.z)*k;camTarget.y+=(fy-camTarget.y)*k;
  const cp=Math.cos(camPitch);
  camera.position.set(camTarget.x+Math.sin(camYaw)*cp*camDist,camTarget.y+Math.sin(camPitch)*camDist,camTarget.z+Math.cos(camYaw)*cp*camDist);
  camera.lookAt(camTarget.x,camTarget.y,camTarget.z);
@@ -245,12 +262,12 @@ function animate(){
  const dt=Math.min(clock.getDelta(),.05);
  // entrada combinada (joystick + teclado)
  let ix=joyVec.x+keyVec.x,iz=joyVec.z+keyVec.z;let len=Math.hypot(ix,iz);if(len>1){ix/=len;iz/=len;len=1}
- const sy=Math.sin(camYaw),cy=Math.cos(camYaw),maxSp=spec?(running?90:34)*(1+specPos.y/22):(running?8.2:4.6)*(buildMode?3:1);
+ const sy=Math.sin(camYaw),cy=Math.cos(camYaw),maxSp=drivingCar?(running?30:17):spec?(running?90:34)*(1+specPos.y/22):(running?8.2:4.6)*(buildMode?3:1);
  // direção relativa à câmera: frente = (-sin, -cos), direita = (cos, -sin)
  const tx=(cy*ix+sy*iz)*maxSp,tz=(-sy*ix+cy*iz)*maxSp;
  const acc=1-Math.exp(-dt*(len>0?11:14));
  if(spec){specVel.x+=(tx-specVel.x)*acc;specVel.z+=(tz-specVel.z)*acc;specPos.x+=specVel.x*dt;specPos.z+=specVel.z*dt;specPos.y=clamp(specPos.y+(specY+((keys.e?1:0)-(keys.q?1:0)))*clamp(specPos.y,6,60)*1.2*dt,2,150);vel.x+=(0-vel.x)*acc;vel.z+=(0-vel.z)*acc}else{vel.x+=(tx-vel.x)*acc;vel.z+=(tz-vel.z)*acc}
- if(!spec)movePlayerWithCollision(vel.x*dt,vel.z*dt);else{specPos.x+=specVel.x*dt;specPos.z+=specVel.z*dt;}const fo=spec?specPos:player.position,gx=Math.round(fo.x/4)*4,gz=Math.round(fo.z/4)*4;groundMesh.position.set(gx,0,gz);sunLight.position.set(gx-45,75,gz+35);sunLight.target.position.set(gx,0,gz);
+ if(drivingCar&&monza){monza.position.x+=vel.x*dt;monza.position.z+=vel.z*dt;if(Math.hypot(vel.x,vel.z)>.5){let a=Math.atan2(vel.x,vel.z)-monza.rotation.y;a=Math.atan2(Math.sin(a),Math.cos(a));monza.rotation.y+=a*(1-Math.exp(-dt*5));player.position.copy(monza.position);player.rotation.copy(monza.rotation)} }else if(!spec)movePlayerWithCollision(vel.x*dt,vel.z*dt);else{specPos.x+=specVel.x*dt;specPos.z+=specVel.z*dt;}const fo=spec?specPos:player.position,gx=Math.round(fo.x/4)*4,gz=Math.round(fo.z/4)*4;groundMesh.position.set(gx,0,gz);sunLight.position.set(gx-45,75,gz+35);sunLight.target.position.set(gx,0,gz);
  const sp=Math.hypot(vel.x,vel.z);
  if(sp>.2){let d=Math.atan2(vel.x,vel.z)-player.rotation.y;d=Math.atan2(Math.sin(d),Math.cos(d));player.rotation.y+=d*(1-Math.exp(-dt*13))}
  // animação proporcional à velocidade
@@ -270,7 +287,12 @@ function drawMini(){const FX=spec?specPos.x:player.position.x,FZ=spec?specPos.z:
 let insideHouse=null,doorMotion=null;function animateDoorPivot(pivot,open,duration=.42,done=null){if(!pivot){if(done)done();return}doorMotion={pivot,from:pivot.rotation.y,to:open?Math.PI/2:0,start:performance.now(),duration:duration*1000,done};}function updateDoorMotion(){if(!doorMotion)return;const a=doorMotion, t=Math.min(1,(performance.now()-a.start)/a.duration), eased=t*t*(3-2*t);a.pivot.rotation.y=a.from+(a.to-a.from)*eased;if(t>=1){doorMotion=null;if(a.done)a.done()}}
 function enterHouse(p){if(!p.interior||!p.houseGroup){toast('Interior ainda não carregado.');return}p.houseGroup.updateMatrixWorld(true);const entryWorld=p.houseGroup.localToWorld(new THREE.Vector3(500,0,500));animateDoorPivot(p.houseGroup.userData.doorPivot,true,.38,()=>{insideHouse=p;p.interior.visible=true;player.position.set(entryWorld.x,0,entryWorld.z);vel.x=vel.z=0;camDist=7;camYaw=0;toast('Você entrou na casa. Caminhe até a porta e use Sair para voltar.');$('actBtn').textContent='🚪 Sair da casa';$('actBtn').style.display='block';animateDoorPivot(p.houseGroup.userData.doorPivot,false,.35)});}
 function exitHouse(){if(!insideHouse)return;const p=insideHouse;p.houseGroup.updateMatrixWorld(true);const exitWorld=p.houseGroup.localToWorld(new THREE.Vector3(0,0,-8));animateDoorPivot(p.houseGroup.userData.doorPivot,true,.38,()=>{p.interior.visible=false;player.position.set(exitWorld.x,0,exitWorld.z);vel.x=vel.z=0;insideHouse=null;toast('Você saiu da casa.');$('actBtn').style.display='none';$('enterBtn').style.display='none';$('actBtn').textContent='🏠 Ver imóvel';animateDoorPivot(p.houseGroup.userData.doorPivot,false,.35)})}
-function checkNearby(){if(insideHouse){$('actBtn').textContent='🚪 Sair da casa';$('actBtn').style.display='block';$('enterBtn').style.display='none';return}let near=null,dist=999;properties.forEach(p=>{let d=Math.hypot(p.x-player.position.x,p.z-player.position.z);if(d<9&&d<dist){near=p;dist=d}});
+function checkNearby(){
+ if(drivingCar){$('actBtn').textContent='🚶 Sair do veículo';$('actBtn').style.display='block';$('enterBtn').style.display='none';return}
+ nearDealer=null;let dealerDist=999;userObjs.forEach(g=>{if(g.userData.spec?.type==='concessionaria'){const d=Math.hypot(g.position.x-player.position.x,g.position.z-player.position.z);if(d<12&&d<dealerDist){dealerDist=d;nearDealer=g}}});
+ if(nearDealer){$('actBtn').textContent='🚗 Abrir concessionária';$('actBtn').style.display='block';$('enterBtn').style.display='none';return}
+ if(monza){const d=Math.hypot(monza.position.x-player.position.x,monza.position.z-player.position.z);if(hasMonza&&d<5){$('enterBtn').textContent='🚘 Entrar no Monza';$('enterBtn').style.display='block';$('actBtn').style.display='none';return}}
+if(insideHouse){$('actBtn').textContent='🚪 Sair da casa';$('actBtn').style.display='block';$('enterBtn').style.display='none';return}let near=null,dist=999;properties.forEach(p=>{let d=Math.hypot(p.x-player.position.x,p.z-player.position.z);if(d<9&&d<dist){near=p;dist=d}});
  if(near!==nearProp){nearProp=near;if(near){selected=near;toast((near.ownerUid?'Casa de '+near.ownerName:'Casa à venda')+' • use o botão de ação');showProperty(near,false)}}
  if(nearProp&&nearProp.building){$('actBtn').textContent=!nearProp.ownerUid?'🏠 Comprar casa':nearProp.ownerUid===uid?(nearProp.locked?'🔓 Destrancar porta':'🔒 Trancar porta'):(nearProp.locked?'🔒 Porta trancada':'🚪 Entrar na casa')}else{$('actBtn').textContent='🏠 Ver imóvel'}$('actBtn').style.display=nearProp?'block':'none';const canEnter=!!(nearProp&&nearProp.building&&nearProp.ownerUid&&nearProp.ownerUid===uid&&!nearProp.locked);$('enterBtn').style.display=canEnter?'block':'none'}
 function showProperty(p,open=true){selected=p;const isBuiltHouse=!!p.building;$('propTitle').textContent=(p.type==='casa'?'🏠 Casa':'🌳 Terreno')+' • '+p.id;$('propDesc').textContent=isBuiltHouse?'Casa '+(HOUSE_TYPES[p.model]?.label||'residencial')+'. Com interior, porta e venda definida pelo administrador.':p.type==='casa'?'Casa residencial em bairro da cidade.':'Terreno disponível para construir sua própria casa.';$('propPrice').textContent='🪙 '+Number(p.price||0).toLocaleString('pt-BR')+' STACOINS';$('propStatus').textContent=p.ownerUid?'Proprietário: '+p.ownerName+(p.building?' • Porta '+(p.locked?'trancada':'destrancada'):''):'Disponível para compra';$('buyBtn').textContent=p.ownerUid?(p.ownerUid===uid?'Seu imóvel':'Já possui proprietário'):'Comprar agora';$('buyBtn').disabled=!!p.ownerUid;$('buyBtn').style.opacity=p.ownerUid?.55:1;if(open)$('propertyModal').classList.add('open')}
@@ -352,7 +374,7 @@ $('chatForm').addEventListener('submit',async e=>{e.preventDefault();const input
 
 function loadScript(src){return new Promise((res,rej)=>{let s=document.createElement('script');s.src=src;s.onload=()=>{clearTimeout(t);res()};s.onerror=()=>{clearTimeout(t);rej(Error('Falha ao carregar Firebase ('+src.split('/').slice(-2).join('/')+'). Verifique a internet.'))};let t=setTimeout(()=>{s.remove();rej(Error('Tempo esgotado ao carregar Firebase. Verifique internet ou bloqueio do navegador.'))},15000);document.head.appendChild(s)})}
 function open(id){$(id).classList.add('open')}document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$(b.dataset.close).classList.remove('open'));
-$('buyBtn').onclick=buyProperty;$('enterBtn').onclick=()=>{if(nearProp&&nearProp.building&&nearProp.ownerUid===uid&&!nearProp.locked)enterHouse(nearProp);else toast('Você precisa ser proprietário e destrancar a porta.')};$('actBtn').onclick=()=>{if(insideHouse){exitHouse();return}if(!nearProp)return;if(nearProp.building){if(!nearProp.ownerUid){showProperty(nearProp,true);return}if(nearProp.ownerUid===uid){nearProp.locked=!nearProp.locked;const status=nearProp.locked?'trancada':'destrancada';if(firebaseOn&&db)db.ref('trindade/properties/'+nearProp.id).update({locked:nearProp.locked}).catch(e=>toast('Falha ao salvar fechadura: '+e.message));toast('Porta '+status+'.');renderProperties();return}if(nearProp.locked){toast('Esta casa está trancada pelo proprietário.');return}enterHouse(nearProp);return}showProperty(nearProp,true)};
+$('buyBtn').onclick=buyProperty;$('buyMonza').onclick=()=>{if(hasMonza){toast('Você já possui o Monza!');return}hasMonza=true;localStorage.setItem('trindade_has_monza','1');$('dealerModal').classList.remove('open');monza=createMonza(player.position.x+5,player.position.z+2);toast('Monza adquirido por 0 STACOINS!');};$('enterBtn').onclick=()=>{if(monza&&hasMonza&&Math.hypot(monza.position.x-player.position.x,monza.position.z-player.position.z)<5){drivingCar=true;player.visible=false;camDist=10;toast('Você entrou no Monza. Use o joystick para dirigir; toque em Sair do veículo para sair.');return}if(nearProp&&nearProp.building&&nearProp.ownerUid===uid&&!nearProp.locked)enterHouse(nearProp);else toast('Você precisa ser proprietário e destrancar a porta.')};$('actBtn').onclick=()=>{if(drivingCar){drivingCar=false;player.visible=true;player.position.set(monza.position.x+2,0,monza.position.z);vel.x=vel.z=0;toast('Você saiu do veículo.');return}if(nearDealer){$('dealerModal').classList.add('open');return}if(insideHouse){exitHouse();return}if(!nearProp)return;if(nearProp.building){if(!nearProp.ownerUid){showProperty(nearProp,true);return}if(nearProp.ownerUid===uid){nearProp.locked=!nearProp.locked;const status=nearProp.locked?'trancada':'destrancada';if(firebaseOn&&db)db.ref('trindade/properties/'+nearProp.id).update({locked:nearProp.locked}).catch(e=>toast('Falha ao salvar fechadura: '+e.message));toast('Porta '+status+'.');renderProperties();return}if(nearProp.locked){toast('Esta casa está trancada pelo proprietário.');return}enterHouse(nearProp);return}showProperty(nearProp,true)};
 $('propertiesBtn').onclick=()=>{renderProperties();open('propertiesModal')};$('myHomeBtn').onclick=()=>{renderProperties();$('propertyList').querySelectorAll('.property-card').forEach((el,i)=>{if(properties[i].ownerUid!==uid)el.style.display='none'});open('propertiesModal')};
 $('customBtn').onclick=$('customNav').onclick=()=>{ $('nameInput').value=appearance.name;open('customModal')};
 $('settingsBtn').onclick=()=>{$('settingsName').value=appearance.name||'';open('settingsModal')};$('hudName').textContent=appearance.name;$('saveSettingsName').onclick=()=>{const chosen=$('settingsName').value.trim().slice(0,24)||'Visitante';appearance.name=chosen;localStorage.setItem('trindade_player_name',chosen);localStorage.setItem('trindade_avatar',JSON.stringify(appearance));$('hudName').textContent=chosen;$('nameInput').value=chosen;if(firebaseOn&&db)db.ref('trindade/players/'+uid).update({name:chosen}).catch(()=>{});$('settingsModal').classList.remove('open');toast('Nome atualizado!')};$('connectBtn').onclick=()=>toast('O multiplayer é conectado pelo login.');$('socialBtn').onclick=()=>open('socialModal');
@@ -650,8 +672,17 @@ function bCasaPequena(s,preview=false){buildHouseExterior(s,'casa_pequena',previ
 function bCasaModerna(s,preview=false){buildHouseExterior(s,'casa_moderna',preview)}
 function bCasaRustica(s,preview=false){buildHouseExterior(s,'casa_rustica',preview)}
 function bCasaFamilia(s,preview=false){buildHouseExterior(s,'casa_familia',preview)}
+function bConcessionaria(){
+ // Concessionária compacta: fachada, vitrine, cobertura, placa e carros de exposição.
+ box(0,3.2,0,22,6.4,14,0xd9dfe4);box(0,6.5,0,23,.3,15,0x38424b);
+ box(0,5.4,-7.15,21,2.2,.25,0x182a3b);box(0,7,-7.3,21,.22,.3,0x202c38);
+ const sign=canvasTex(1024,180,(c,w,h)=>{c.fillStyle='#16283a';c.fillRect(0,0,w,h);c.fillStyle='#f4f6f8';c.font='bold 110px Arial';c.textAlign='center';c.textBaseline='middle';c.fillText('CONCESSIONÁRIA',w/2,h/2);c.fillStyle='#54e0b0';c.font='bold 58px Arial';c.fillText('TRINDADE',w/2,h-35)});
+ planeM(16,2.3,0,7.8,-7.48,new THREE.MeshStandardMaterial({map:sign,roughness:.65}));
+ for(let x=-8;x<=8;x+=4){box(x,2.8,-7.24,3.4,4.8,.12,0x7396a5);box(x,2.8,-7.12,3.05,4.45,.06,0x9cc5d1)}
+ box(0,.15,-8,7,.3,1.4,0x68727a);box(-8,3.4,7.2,5,6.8,.4,0x505b65);box(8,3.4,7.2,5,6.8,.4,0x505b65);
+}
 const BTYPES={
- casa_pequena:{n:'🏠 Casa simples',snap:2,color:1,house:1,fn:bCasaPequena},casa_moderna:{n:'🏡 Casa moderna',snap:2,color:1,house:1,fn:bCasaModerna},casa_rustica:{n:'🪵 Casa rústica',snap:2,color:1,house:1,fn:bCasaRustica},casa_familia:{n:'🏘️ Casa familiar',snap:2,color:1,house:1,fn:bCasaFamilia},
+ concessionaria:{n:'🚗 Concessionária',snap:2,fn:bConcessionaria},casa_pequena:{n:'🏠 Casa simples',snap:2,color:1,house:1,fn:bCasaPequena},casa_moderna:{n:'🏡 Casa moderna',snap:2,color:1,house:1,fn:bCasaModerna},casa_rustica:{n:'🪵 Casa rústica',snap:2,color:1,house:1,fn:bCasaRustica},casa_familia:{n:'🏘️ Casa familiar',snap:2,color:1,house:1,fn:bCasaFamilia},
  mercado:{n:'🛒 Atacarejo Bandiera',snap:1,fn:bMercado},agrosul:{n:'🌾 AgroSul',snap:1,fn:bAgroSul},hotel:{n:'🏨 Hotel Alvorada',snap:1,fn:bHotel},casaarcos:{n:'🏡 Casa dos Arcos',snap:1,fn:bCasaArcos},placaperim:{n:'🔵 Placa Perímetro Urbano',snap:1,fn:bPlacaPerimetro},placahotel:{n:'🪧 Placa Hotel Alvorada',snap:1,fn:bPlacaHotel},casa:{n:'🏠 Casa',snap:2,color:1,fn:bCasa},predio:{n:'🏢 Prédio',snap:2,color:1,floors:1,fn:bPredio},
  estrada:{n:'🛣️ Estrada',snap:13,fn:()=>{box(0,.03,0,13,.06,13,0x343b40);[-4,0,4].forEach(x=>box(x,.07,0,2,.03,.14,0xf3d16a))}},
  cruz:{n:'➕ Cruzamento',snap:13,fn:()=>box(0,.03,0,13,.06,13,0x343b40)},rodovia:{n:'🛣️ Rodovia RS',snap:13,fn:eRodovia},terra:{n:'🟤 Estrada de terra',snap:13,fn:eTerra},paralelo:{n:'🧱 Paralelepípedo',snap:13,fn:eParalelepipedo},faixa:{n:'🦓 Faixa pedestre',snap:13,fn:eFaixa},rotatoria:{n:'🔄 Rotatória',snap:13,fn:eRotatoria},meiofio:{n:'▬ Meio-fio',snap:1,fn:eMeioFio},
@@ -726,7 +757,7 @@ $('buildBtn').onclick=()=>{if(isAdmin)setBuild(!buildMode);else toast('Construç
 document.addEventListener('keydown',e=>{if(e.target&&['INPUT','SELECT'].includes(e.target.tagName))return;const k=e.key.toLowerCase();
  if(k==='b')setBuild(!buildMode);else if(!buildMode)return;else if(k==='v')setSpec(!spec);else if(k==='r')rotateB();else if(k==='x'){bDel=!bDel;tint(hoverG,false);hoverG=null;refreshGhost();syncUI()}else if(k==='z'&&(e.ctrlKey||e.metaKey)){undoB();e.preventDefault()}});
 window.connectFirebase=connectFirebase;
-makeWorld();loadLocal();loadBuild();$('buildBtn').style.display='';renderProperties();animate();
+makeWorld();loadLocal();loadBuild();if(hasMonza)monza=createMonza(player.position.x+5,player.position.z+2);$('buildBtn').style.display='';renderProperties();animate();
 }
 
 let loginMode='login';const loginToggle=document.getElementById('loginToggle'),loginAction=document.getElementById('loginAction');loginToggle.onclick=()=>{loginMode=loginMode==='login'?'register':'login';loginAction.textContent=loginMode==='login'?'Entrar':'Criar conta';loginToggle.textContent=loginMode==='login'?'Criar uma conta':'Voltar ao login';document.getElementById('loginSub').textContent=loginMode==='login'?'Entre na sua conta':'Crie sua conta para guardar seu progresso';document.getElementById('loginMsg').textContent=''};loginAction.onclick=async()=>{const e=document.getElementById('loginEmail').value.trim(),p=document.getElementById('loginPass').value;if(!e||!p){document.getElementById('loginMsg').textContent='Preencha e-mail e senha.';return}if(p.length<6){document.getElementById('loginMsg').textContent='A senha precisa ter pelo menos 6 caracteres.';return}loginAction.disabled=true;document.getElementById('loginMsg').textContent='Conectando...';try{if(typeof window.connectFirebase!=='function')throw new Error('O motor do jogo ainda está inicializando. Aguarde e tente novamente.');await window.connectFirebase(e,p)}catch(err){document.getElementById('loginMsg').textContent='ERRO: '+(err&&err.message?err.message:String(err));console.error('[Trindade login error]',err)}finally{loginAction.disabled=false}};window.addEventListener('load',()=>{setTimeout(()=>{document.getElementById('startup').style.display='none';document.getElementById('loginScreen').style.display='flex'},5000)});
