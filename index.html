@@ -79,7 +79,7 @@ body.driving #carControls{display:flex}body.driving #joy,body.driving #runBtn{di
 .carBtn.wide{width:78px;height:86px;border-radius:22px;font-size:27px}
 .carBtn small{display:block;font-size:10px;letter-spacing:.3px;margin-top:2px}
 .carBtn.active{background:#167bd8;border-color:#b8e4ff;box-shadow:0 0 18px #1685f877}
-#carSteer{display:flex;gap:8px}
+#carSteer{display:flex;gap:8px}#sirenBtn{width:76px;font-size:20px}#sirenBtn.siren-on{background:linear-gradient(145deg,#d32235,#153f9b);border-color:#fff;box-shadow:0 0 18px #e33a5c99}
 @media(pointer:coarse){#carControls{bottom:calc(env(safe-area-inset-bottom,0px) + 22px);left:14px;right:14px}.carBtn{width:62px;height:62px}.carBtn.wide{width:74px;height:80px}}
 
 #startup{position:fixed;inset:0;z-index:999;background:#fff;color:#222;display:flex;align-items:center;justify-content:center;flex-direction:column;font-family:Arial,sans-serif;padding:20px}#startup img{width:min(78vw,420px);max-height:70vh;object-fit:contain}#startup .loadbar{width:min(70vw,300px);height:9px;border-radius:9px;background:#eee;margin-top:24px;overflow:hidden}#startup .loadbar i{display:block;height:100%;width:0;background:#d72832;animation:load5 5s linear forwards}@keyframes load5{to{width:100%}}#loginScreen{position:fixed;inset:0;z-index:998;background:#fff;color:#222;display:none;align-items:center;justify-content:center;padding:18px;font-family:Arial,sans-serif}#loginCard{width:min(440px,100%);background:white;border:1px solid #ddd;border-radius:18px;padding:24px;box-shadow:0 10px 35px #0001}#loginCard h1{margin:0 0 6px;color:#222;text-align:center}#loginCard p{color:#666;text-align:center;font-size:14px}#loginCard label{display:block;margin:12px 0 5px;font-size:13px;color:#333}#loginCard input{background:#fff;color:#222;border:1px solid #ccc}#loginCard button{width:100%;margin-top:12px;background:#d72832}#loginMsg{font-size:13px;text-align:center;color:#b22;margin-top:10px;min-height:18px}#loginToggle{background:#fff!important;color:#333!important;border:1px solid #ccc}
@@ -122,7 +122,7 @@ body.driving #carControls{display:flex}body.driving #joy,body.driving #runBtn{di
 </div>
 <div class="joy" id="joy"><div class="knob" id="knob"></div></div><button class="run" id="runBtn">🏃</button><div id="carControls" aria-label="Controles do veículo">
  <div class="carControlGroup" id="carSteer"><button class="carBtn" data-car-control="left" aria-label="Virar esquerda">◀<small>ESQ.</small></button><button class="carBtn" data-car-control="right" aria-label="Virar direita">▶<small>DIR.</small></button></div>
- <div class="carControlGroup"><button class="carBtn" data-car-control="brake" aria-label="Frear e dar ré">▼<small>FREIO / RÉ</small></button><button class="carBtn wide" data-car-control="throttle" aria-label="Acelerar">▲<small>ACELERAR</small></button></div>
+ <div class="carControlGroup"><button class="carBtn" id="sirenBtn" type="button" aria-label="Ligar ou desligar giroflex">🚨<small>GIROFLEX OFF</small></button><button class="carBtn" data-car-control="brake" aria-label="Frear e dar ré">▼<small>FREIO / RÉ</small></button><button class="carBtn wide" data-car-control="throttle" aria-label="Acelerar">▲<small>ACELERAR</small></button></div>
 </div>
 
 <div class="lookhint" id="lookHint">👆 Arraste aqui para olhar ao redor</div>
@@ -261,7 +261,7 @@ function createPoliceCarBox(x,z){
  const lampB=new THREE.Mesh(new THREE.BoxGeometry(.36,.13,.22),blue);
  lampB.position.set(-.23,1.5,0);g.add(lampB);
  const lampR=new THREE.Mesh(new THREE.BoxGeometry(.36,.13,.22),red);
- lampR.position.set(.23,1.5,0);g.add(lampR);
+ lampR.position.set(.23,1.5,0);g.add(lampR);g.userData.sirenMats=[blue,red];
  const stripeMat=new THREE.MeshStandardMaterial({color:0x123d78,roughness:.6});
  const stripe=new THREE.Mesh(new THREE.BoxGeometry(1.72,.16,.025),stripeMat);
  stripe.position.set(0,.78,.91);g.add(stripe);
@@ -287,7 +287,7 @@ function createPoliceCar(x,z){
   if(!policeGLBCache)policeGLBCache=parseGLB(POLICE_GLB_B64);
   const {json,acc}=policeGLBCache;
   const g=new THREE.Group(),inner=new THREE.Group();inner.rotation.y=Math.PI; // frente do modelo é +Z; no jogo é -Z
-  g.add(inner);g.userData.policeVehicle=true;g.userData.vehicle=true;g.userData.sirenMats=[];
+  g.add(inner);g.userData.policeVehicle=true;g.userData.vehicle=true;g.userData.sirenMats=[];g.userData.sirenOn=false;
   const mats=json.materials.map(m=>{const pb=m.pbrMetallicRoughness||{},c=pb.baseColorFactor||[1,1,1,1];
    const mm=new THREE.MeshStandardMaterial({roughness:pb.roughnessFactor??.6,metalness:pb.metallicFactor??0});
    mm.color.setRGB(c[0],c[1],c[2]);
@@ -309,10 +309,38 @@ function createPoliceCar(x,z){
   g.position.set(x,0,z);scene.add(g);return g;
  }catch(e){console.warn('Viatura GLB falhou, usando modelo simples',e);return createPoliceCarBox(x,z)}
 }
-// Giroflex piscando (vermelho/azul alternando)
-setInterval(()=>{if(!monza||!monza.userData.sirenMats)return;const on=(Date.now()/280|0)%2;monza.userData.sirenMats.forEach((m,i)=>{m.emissiveIntensity=(i%2===on)?1.6:.15})},120);
+// Giroflex manual com luzes alternadas e sirene sonora.
+let sirenAudio=null,sirenOsc=null,sirenGain=null,sirenTimer=null;
+function stopSirenSound(){
+ if(sirenTimer){clearInterval(sirenTimer);sirenTimer=null}
+ if(sirenGain&&sirenAudio)sirenGain.gain.setTargetAtTime(0,sirenAudio.currentTime,.04);
+}
+function startSirenSound(){
+ try{
+  const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+  if(!sirenAudio)sirenAudio=new AC();if(sirenAudio.state==='suspended')sirenAudio.resume();
+  if(!sirenGain){sirenGain=sirenAudio.createGain();sirenGain.gain.value=0;sirenGain.connect(sirenAudio.destination)}
+  if(sirenOsc){try{sirenOsc.stop()}catch(_){}}
+  sirenOsc=sirenAudio.createOscillator();sirenOsc.type='sawtooth';sirenOsc.frequency.value=740;sirenOsc.connect(sirenGain);sirenOsc.start();
+  sirenGain.gain.setTargetAtTime(.055,sirenAudio.currentTime,.03);
+  let high=true;sirenTimer=setInterval(()=>{if(!sirenAudio||!sirenOsc)return;high=!high;sirenOsc.frequency.setTargetAtTime(high?880:620,sirenAudio.currentTime,.08)},420);
+ }catch(e){console.warn('Áudio do giroflex indisponível',e)}
+}
+function setSiren(on){
+ if(!monza||!monza.userData.policeVehicle){toast('Entre na viatura para usar o giroflex.');return}
+ monza.userData.sirenOn=!!on;
+ const btn=$('sirenBtn');btn.classList.toggle('siren-on',!!on);btn.querySelector('small').textContent=on?'GIROFLEX ON':'GIROFLEX OFF';
+ if(on)startSirenSound();else stopSirenSound();
+ toast(on?'🚨 Giroflex ligado':'Giroflex desligado');
+}
+setInterval(()=>{
+ if(!monza||!monza.userData.policeVehicle||!monza.userData.sirenMats)return;
+ const active=!!monza.userData.sirenOn,phase=(Date.now()/260|0)%2;
+ monza.userData.sirenMats.forEach((m,i)=>{m.emissiveIntensity=active?(i%2===phase?2.4:.08):0});
+},120);
+$('sirenBtn').addEventListener('click',()=>setSiren(!(monza&&monza.userData.sirenOn)));
 function boxCar(g,x,y,z,w,h,d,color){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(color,.45));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;g.add(m);return m}
-function removeMonza(){if(monza){scene.remove(monza);monza=null;drivingCar=false;player.visible=true}}
+function removeMonza(){stopSirenSound();const sb=$('sirenBtn');if(sb){sb.classList.remove('siren-on');sb.querySelector('small').textContent='GIROFLEX OFF'}if(monza){scene.remove(monza);monza=null;drivingCar=false;player.visible=true}}
 let remoteBuildIds=new Set();
 let groundMesh,sunLight,buildMode=false,curGroup=null,oidN=0;const worldGroups=[];let isAdmin=false;const ADMIN_UID='bsaez769YeMzZpKDEfPm4vSBcOp2';
 const add=o=>(curGroup||scene).add(o);
@@ -413,7 +441,7 @@ function animate(){
    // Controlador novo: velocidade escalar e avanço pelo eixo LOCAL -Z do modelo.
    // Isso elimina o cálculo independente de X/Z que fazia o carro parecer andar de lado.
    const throttle=carInput.throttle?1:0,brake=carInput.brake?1:0;
-   const steer=(carInput.right?1:0)-(carInput.left?1:0);
+   const steer=(carInput.left?1:0)-(carInput.right?1:0);
    const maxForward=22, maxReverse=6.0;
    if(throttle) carSpeed=Math.min(maxForward,carSpeed+7.0*dt);
    if(brake){
@@ -558,7 +586,7 @@ $('chatForm').addEventListener('submit',async e=>{e.preventDefault();const input
 
 function loadScript(src){return new Promise((res,rej)=>{let s=document.createElement('script');s.src=src;s.onload=()=>{clearTimeout(t);res()};s.onerror=()=>{clearTimeout(t);rej(Error('Falha ao carregar Firebase ('+src.split('/').slice(-2).join('/')+'). Verifique a internet.'))};let t=setTimeout(()=>{s.remove();rej(Error('Tempo esgotado ao carregar Firebase. Verifique internet ou bloqueio do navegador.'))},15000);document.head.appendChild(s)})}
 function open(id){$(id).classList.add('open')}document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$(b.dataset.close).classList.remove('open'));
-$('buyBtn').onclick=buyProperty;$('buyMonza').onclick=()=>{if(hasMonza){toast('Você já possui o Monza!');return}hasMonza=true;localStorage.setItem('trindade_has_monza','1');$('dealerModal').classList.remove('open');spawnCar('monza');toast('Monza adquirido por 0 STACOINS!');};$('buyPolice').onclick=()=>{if(hasPolice){toast('Você já possui a viatura!');return}hasPolice=true;localStorage.setItem('trindade_has_police','1');$('dealerModal').classList.remove('open');spawnCar('police');checkNearby();toast('Viatura policial adquirida por 0 STACOINS! Ela está ao seu lado.');};$('enterBtn').onclick=()=>{if(monza&&(hasMonza||hasPolice)&&Math.hypot(monza.position.x-player.position.x,monza.position.z-player.position.z)<5){drivingCar=true;document.body.classList.add('driving');carSpeed=0;vel.x=vel.z=0;player.visible=false;camDist=10;toast(monza.userData.policeVehicle?'Você entrou na viatura. Use os botões de direção, acelerar e frear.':'Você entrou no Monza. Use os botões de direção, acelerar e frear.');return}if(nearProp&&nearProp.building&&nearProp.ownerUid===uid&&!nearProp.locked)enterHouse(nearProp);else toast('Você precisa ser proprietário e destrancar a porta.')};$('actBtn').onclick=()=>{if(drivingCar){drivingCar=false;document.body.classList.remove('driving');carSpeed=0;for(const k in carInput)carInput[k]=false;document.querySelectorAll('[data-car-control]').forEach(b=>b.classList.remove('active'));player.visible=true;player.position.set(monza.position.x+2,0,monza.position.z);vel.x=vel.z=0;toast('Você saiu do veículo.');return}if(nearDealer){$('dealerModal').classList.add('open');return}if(insideHouse){exitHouse();return}if(!nearProp)return;if(nearProp.building){if(!nearProp.ownerUid){showProperty(nearProp,true);return}if(nearProp.ownerUid===uid){nearProp.locked=!nearProp.locked;const status=nearProp.locked?'trancada':'destrancada';if(firebaseOn&&db)db.ref('trindade/properties/'+nearProp.id).update({locked:nearProp.locked}).catch(e=>toast('Falha ao salvar fechadura: '+e.message));toast('Porta '+status+'.');renderProperties();return}if(nearProp.locked){toast('Esta casa está trancada pelo proprietário.');return}enterHouse(nearProp);return}showProperty(nearProp,true)};
+$('buyBtn').onclick=buyProperty;$('buyMonza').onclick=()=>{if(hasMonza){toast('Você já possui o Monza!');return}hasMonza=true;localStorage.setItem('trindade_has_monza','1');$('dealerModal').classList.remove('open');spawnCar('monza');toast('Monza adquirido por 0 STACOINS!');};$('buyPolice').onclick=()=>{if(hasPolice){toast('Você já possui a viatura!');return}hasPolice=true;localStorage.setItem('trindade_has_police','1');$('dealerModal').classList.remove('open');spawnCar('police');checkNearby();toast('Viatura policial adquirida por 0 STACOINS! Ela está ao seu lado.');};$('enterBtn').onclick=()=>{if(monza&&(hasMonza||hasPolice)&&Math.hypot(monza.position.x-player.position.x,monza.position.z-player.position.z)<5){drivingCar=true;document.body.classList.add('driving');carSpeed=0;vel.x=vel.z=0;player.visible=false;camDist=10;toast(monza.userData.policeVehicle?'Você entrou na viatura. Use os botões de direção, acelerar e frear.':'Você entrou no Monza. Use os botões de direção, acelerar e frear.');return}if(nearProp&&nearProp.building&&nearProp.ownerUid===uid&&!nearProp.locked)enterHouse(nearProp);else toast('Você precisa ser proprietário e destrancar a porta.')};$('actBtn').onclick=()=>{if(drivingCar){stopSirenSound();if(monza&&monza.userData.policeVehicle)monza.userData.sirenOn=false;$('sirenBtn').classList.remove('siren-on');$('sirenBtn').querySelector('small').textContent='GIROFLEX OFF';drivingCar=false;document.body.classList.remove('driving');carSpeed=0;for(const k in carInput)carInput[k]=false;document.querySelectorAll('[data-car-control]').forEach(b=>b.classList.remove('active'));player.visible=true;player.position.set(monza.position.x+2,0,monza.position.z);vel.x=vel.z=0;toast('Você saiu do veículo.');return}if(nearDealer){$('dealerModal').classList.add('open');return}if(insideHouse){exitHouse();return}if(!nearProp)return;if(nearProp.building){if(!nearProp.ownerUid){showProperty(nearProp,true);return}if(nearProp.ownerUid===uid){nearProp.locked=!nearProp.locked;const status=nearProp.locked?'trancada':'destrancada';if(firebaseOn&&db)db.ref('trindade/properties/'+nearProp.id).update({locked:nearProp.locked}).catch(e=>toast('Falha ao salvar fechadura: '+e.message));toast('Porta '+status+'.');renderProperties();return}if(nearProp.locked){toast('Esta casa está trancada pelo proprietário.');return}enterHouse(nearProp);return}showProperty(nearProp,true)};
 $('propertiesBtn').onclick=()=>{renderProperties();open('propertiesModal')};$('myHomeBtn').onclick=()=>{renderProperties();$('propertyList').querySelectorAll('.property-card').forEach((el,i)=>{if(properties[i].ownerUid!==uid)el.style.display='none'});open('propertiesModal')};
 $('customBtn').onclick=$('customNav').onclick=()=>{ $('nameInput').value=appearance.name;open('customModal')};
 
@@ -777,6 +805,20 @@ function rAsphalt(x,z,w,d){const m=new THREE.Mesh(new THREE.BoxGeometry(w,.06,d)
 function rPaint(x,z,w,d,color){const m=new THREE.Mesh(new THREE.BoxGeometry(w,.02,d),PAINT_MATS[color]||(PAINT_MATS[color]=new THREE.MeshStandardMaterial({color,roughness:.8})));m.position.set(x,.07,z);m.receiveShadow=true;add(m);return m}
 function eEstrada(){rAsphalt(0,0,13,13);[-4.333,0,4.333].forEach(x=>rPaint(x,0,2.2,.14,0xf3d16a))}
 function eCruz(){rAsphalt(0,0,13,13)}
+ function roadRibbon(points,width=13){
+  const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(p[0],.065,p[1])));
+  const samples=36,verts=[],indices=[];
+  for(let i=0;i<=samples;i++){const t=i/samples,p=curve.getPoint(t),tan=curve.getTangent(t).normalize(),nx=-tan.z,nz=tan.x;
+   verts.push(p.x+nx*width/2,p.y,p.z+nz*width/2,p.x-nx*width/2,p.y,p.z-nz*width/2)}
+  for(let i=0;i<samples;i++){const a=i*2;indices.push(a,a+1,a+2,a+1,a+3,a+2)}
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));geo.setIndex(indices);geo.computeVertexNormals();
+  const mesh=new THREE.Mesh(geo,asphaltMat(width,24));mesh.receiveShadow=true;add(mesh);
+  for(let i=3;i<samples-2;i+=5){const p=curve.getPoint(i/samples);rPaint(p.x,p.z,.75,.14,0xf3d16a)}
+ }
+ function eCurva(){roadRibbon([[-6.5,-6.5],[-6.5,-2],[-5.8,2],[-3.5,5],[0,6.5],[6.5,6.5]],13)}
+ function eCurvaEsq(){roadRibbon([[6.5,-6.5],[6.5,-2],[5.8,2],[3.5,5],[0,6.5],[-6.5,6.5]],13)}
+ function eT(){rAsphalt(0,0,13,13);rAsphalt(-13,0,13,13);rAsphalt(13,0,13,13);rAsphalt(0,13,13,13);
+  rPaint(0,0,2.2,.14,0xf3d16a);rPaint(-13,0,13,.14,0xf3d16a);rPaint(13,0,13,.14,0xf3d16a)}
 function eRodovia(){rAsphalt(0,0,13,13);
  [-5.6,5.6].forEach(z=>rPaint(0,z,13,.16,0xf2f2f2));
  [-.2,.2].forEach(z=>rPaint(0,z,13,.12,0xf3d16a))}
@@ -819,7 +861,9 @@ const HOUSE_TYPES={
  casa_pequena:{label:'Casa simples',emoji:'🏠',priceDefault:2500,color:0xe0d3bd},
  casa_moderna:{label:'Casa moderna',emoji:'🏡',priceDefault:8500,color:0xd6d9dc},
  casa_rustica:{label:'Casa rústica',emoji:'🪵',priceDefault:5000,color:0xc69b69},
- casa_familia:{label:'Casa familiar',emoji:'🏘️',priceDefault:12000,color:0xe9e3d7}
+ casa_familia:{label:'Casa familiar',emoji:'🏘️',priceDefault:12000,color:0xe9e3d7},
+ casa_sobrado:{label:'Sobrado',emoji:'🏠',priceDefault:15000,color:0xe2d5c5},
+ casa_chale:{label:'Chalé',emoji:'🏡',priceDefault:9500,color:0xc69b69}
 };
 function buildHouseExterior(s,kind,preview=false){
  const wall=s.color||HOUSE_TYPES[kind].color, roof=kind==='casa_rustica'?0x65432a:kind==='casa_moderna'?0x343b45:0x914b3c;
@@ -874,6 +918,8 @@ function bCasaPequena(s,preview=false){buildHouseExterior(s,'casa_pequena',previ
 function bCasaModerna(s,preview=false){buildHouseExterior(s,'casa_moderna',preview)}
 function bCasaRustica(s,preview=false){buildHouseExterior(s,'casa_rustica',preview)}
 function bCasaFamilia(s,preview=false){buildHouseExterior(s,'casa_familia',preview)}
+ function bCasaSobrado(s,preview=false){buildHouseExterior(s,'casa_sobrado',preview)}
+ function bCasaChale(s,preview=false){buildHouseExterior(s,'casa_chale',preview)}
 function bConcessionaria(){
  // Concessionária compacta: fachada, vitrine, cobertura, placa e carros de exposição.
  box(0,3.2,0,22,6.4,14,0xd9dfe4);box(0,6.5,0,23,.3,15,0x38424b);
@@ -883,11 +929,43 @@ function bConcessionaria(){
  for(let x=-8;x<=8;x+=4){box(x,2.8,-7.24,3.4,4.8,.12,0x7396a5);box(x,2.8,-7.12,3.05,4.45,.06,0x9cc5d1)}
  box(0,.15,-8,7,.3,1.4,0x68727a);box(-8,3.4,7.2,5,6.8,.4,0x505b65);box(8,3.4,7.2,5,6.8,.4,0x505b65);
 }
+function bPracaPrefeitura(){
+ // Praça inspirada nas imagens enviadas: prefeitura, fonte, pergolado e playground.
+ const grass=0x6b9b54,stone=0xc7c0b0,white=0xe5e7e8,wood=0x68472f;
+ box(0,.08,0,78,.16,66,grass);
+ // calçadas perimetrais e passeio curvo representado em trechos conectados
+ box(0,.18,30,78,.24,5,0xb8b2a7);box(0,.18,-30,78,.24,5,0xb8b2a7);
+ box(-36,.18,0,5,.24,56,0xb8b2a7);box(36,.18,0,5,.24,56,0xb8b2a7);
+ // prefeitura municipal ao fundo
+ box(0,3.2,-23,30,6.4,10,0xcbd0d4);box(0,6.5,-23,31,.35,10.8,0x697989);
+ box(0,5.1,-28.12,25,1.25,.18,0x566b7b);
+ const plaque=canvasTex(1024,160,(c,w,h)=>{c.fillStyle='#566b7b';c.fillRect(0,0,w,h);c.fillStyle='#fff';c.font='bold 90px Arial';c.textAlign='center';c.textBaseline='middle';c.fillText('PREFEITURA MUNICIPAL',w/2,h/2)});
+ planeM(20,3.1,0,5.15,-28.25,new THREE.MeshStandardMaterial({map:plaque}));
+ for(let x=-12;x<=12;x+=4){box(x,2.6,-28.2,1.7,3.6,.12,0x718b98);box(x,2.6,-28.28,1.25,3.1,.05,0x9db7c1)}
+ // praça central e fonte/espelho d'água
+ cyl(0,.25,0,11,11,.5,white,40);cyl(0,.48,0,9.5,9.5,.16,0x8fc8c8,40);
+ cyl(0,.58,0,1.1,1.1,.2,white,24);cyl(0,1.3,0,.18,.25,1.3,0x9bbfc6,12);
+ // canteiros circulares e caminhos de tijolo
+ for(const [x,z] of [[-20,0],[20,0],[-17,17],[17,17]]){cyl(x,.25,z,4.2,4.2,.35,white,28);cyl(x,.48,z,3.2,3.2,.12,grass,28);tree(x,z)}
+ box(-23,.23,0,3,.08,25,0xa66d55);box(23,.23,0,3,.08,25,0xa66d55);box(0,.23,18,43,.08,3,0xa66d55);
+ // pergolado de madeira com trepadeiras
+ for(const x of [-13,-8,-3,2,7,12])for(const z of [8,15])box(x,1.8,z,.32,3.6,.32,wood);
+ box(-.5,3.5,11,27,.3,8,wood);
+ for(let x=-13;x<=12;x+=2)box(x,3.75,11,.14,.14,8,0x765336);
+ for(let i=0;i<7;i++)ball(-12+i*4,4.05,11,.9,0x4b8b48,1.2);
+ // playground colorido
+ box(-25,.22,-12,16,.18,13,0xd1c6b2);
+ box(-26,2.1,-13,5,.35,5,0x2586c8);box(-26,3.5,-13,5,.25,5,0x2586c8);
+ box(-28,1.4,-10,1,2.8,.35,0x9a5c36);box(-24,1.4,-10,1,2.8,.35,0x9a5c36);
+ box(-20,.8,-13,8,.35,1.2,0xe54b35);box(-16,.9,-13,1.2,1.8,1.2,0x2b72bc);
+ // bancos, árvores e postes
+ for(const [x,z] of [[-30,20],[-25,23],[28,20],[30,-12],[14,-8],[-13,-20],[13,-20]]){tree(x,z);box(x+2,.65,z,3,.22,.8,wood);box(x+2,1.05,z+.32,3,.7,.16,wood);lamp(x-2,z)}
+}
 const BTYPES={
- concessionaria:{n:'🚗 Concessionária',snap:2,fn:bConcessionaria},casa_pequena:{n:'🏠 Casa simples',snap:2,color:1,house:1,fn:bCasaPequena},casa_moderna:{n:'🏡 Casa moderna',snap:2,color:1,house:1,fn:bCasaModerna},casa_rustica:{n:'🪵 Casa rústica',snap:2,color:1,house:1,fn:bCasaRustica},casa_familia:{n:'🏘️ Casa familiar',snap:2,color:1,house:1,fn:bCasaFamilia},
+ praca_prefeitura:{n:'🏛️ Praça da Prefeitura (mapa)',snap:1,fn:bPracaPrefeitura},concessionaria:{n:'🚗 Concessionária',snap:2,fn:bConcessionaria},casa_pequena:{n:'🏠 Casa simples',snap:2,color:1,house:1,fn:bCasaPequena},casa_moderna:{n:'🏡 Casa moderna',snap:2,color:1,house:1,fn:bCasaModerna},casa_rustica:{n:'🪵 Casa rústica',snap:2,color:1,house:1,fn:bCasaRustica},casa_familia:{n:'🏘️ Casa familiar',snap:2,color:1,house:1,fn:bCasaFamilia},casa_sobrado:{n:'🏠 Sobrado',snap:2,color:1,house:1,fn:bCasaSobrado},casa_chale:{n:'🏡 Chalé',snap:2,color:1,house:1,fn:bCasaChale},
  mercado:{n:'🛒 Atacarejo Bandiera',snap:1,fn:bMercado},agrosul:{n:'🌾 AgroSul',snap:1,fn:bAgroSul},hotel:{n:'🏨 Hotel Alvorada',snap:1,fn:bHotel},casaarcos:{n:'🏡 Casa dos Arcos',snap:1,fn:bCasaArcos},placaperim:{n:'🔵 Placa Perímetro Urbano',snap:1,fn:bPlacaPerimetro},placahotel:{n:'🪧 Placa Hotel Alvorada',snap:1,fn:bPlacaHotel},casa:{n:'🏠 Casa',snap:2,color:1,fn:bCasa},predio:{n:'🏢 Prédio',snap:2,color:1,floors:1,fn:bPredio},
  estrada:{n:'🛣️ Rua asfaltada',snap:13,noCol:1,fn:eEstrada},
- cruz:{n:'➕ Cruzamento',snap:13,noCol:1,fn:eCruz},rodovia:{n:'🛣️ Rodovia RS',snap:13,noCol:1,fn:eRodovia},terra:{n:'🟤 Estrada de terra',snap:13,noCol:1,hidden:1,fn:eEstrada},paralelo:{n:'🧱 Paralelepípedo',snap:13,noCol:1,hidden:1,fn:eEstrada},faixa:{n:'🦓 Faixa pedestre',snap:13,noCol:1,fn:eFaixa},rotatoria:{n:'🔄 Rotatória',snap:13,noCol:1,fn:eRotatoria},meiofio:{n:'▬ Meio-fio',snap:1,noCol:1,fn:eMeioFio},
+ cruz:{n:'➕ Cruzamento',snap:13,noCol:1,fn:eCruz},curva:{n:'↪️ Estrada em curva',snap:13,noCol:1,fn:eCurva},curva_esq:{n:'↩️ Curva para esquerda',snap:13,noCol:1,fn:eCurvaEsq},entroncamento_t:{n:'T️⃣ Cruzamento em T',snap:13,noCol:1,fn:eT},rodovia:{n:'🛣️ Rodovia RS',snap:13,noCol:1,fn:eRodovia},terra:{n:'🟤 Estrada de terra',snap:13,noCol:1,hidden:1,fn:eEstrada},paralelo:{n:'🧱 Paralelepípedo',snap:13,noCol:1,hidden:1,fn:eEstrada},faixa:{n:'🦓 Faixa pedestre',snap:13,noCol:1,fn:eFaixa},rotatoria:{n:'🔄 Rotatória',snap:13,noCol:1,fn:eRotatoria},meiofio:{n:'▬ Meio-fio',snap:1,noCol:1,fn:eMeioFio},
  calcada:{n:'🚶 Calçada',snap:3,noCol:1,fn:eCalcada},
  arvore:{n:'🌳 Árvore',snap:1,fn:()=>tree(0,0)},poste:{n:'💡 Poste',snap:1,fn:()=>lamp(0,0)},araucaria:{n:'🌲 Araucária',snap:1,fn:tAraucaria},palmeira:{n:'🌴 Palmeira',snap:1,fn:tPalmeira},ipe:{n:'🌼 Ipê amarelo',snap:1,fn:tIpe},eucalipto:{n:'🌿 Eucalipto',snap:1,fn:tEucalipto},pinus:{n:'🎄 Pinus',snap:1,fn:tPinus},cipreste:{n:'🌲 Cipreste',snap:1,fn:tCipreste},mangueira:{n:'🌳 Mangueira',snap:1,fn:tMangueira},arbusto:{n:'🌱 Arbusto',snap:1,fn:tArbusto},flores:{n:'🌸 Canteiro',snap:1,fn:tFlores},pconcreto:{n:'💡 Poste concreto',snap:1,fn:pConcreto},pduplo:{n:'💡 Poste duplo',snap:1,fn:pDuplo},pled:{n:'🔆 Poste LED',snap:1,fn:pLED},prural:{n:'🪵 Poste rural',snap:1,fn:pRural},pcolonial:{n:'🏮 Poste colonial',snap:1,fn:pColonial},ptorre:{n:'🏟️ Torre de refletores',snap:1,fn:pTorre}};
 const BCOLORS=[0xe0d3bd,0xf2f2f2,0xc9a37a,0x9cc3d5,0xd98c7a,0x8fbf8f,0xb9b9c4,0x5b6770];
@@ -948,9 +1026,9 @@ function syncUI(){const T=BTYPES[bType];$('bItems').querySelectorAll('button').f
  $('bFloorsBox').style.display=T.floors&&!bDel?'flex':'none';$('bColors').style.display=T.color&&!bDel?'flex':'none';$('fVal').textContent=bFloors;
  $('bColors').querySelectorAll('button').forEach(b=>b.classList.toggle('sel',+b.dataset.c===bColor))}
 const BCATS=[
- {id:'casas',n:'🏠 Casas',items:['casa_pequena','casa_moderna','casa_rustica','casa_familia','casaarcos','casa']},
- {id:'predios',n:'🏢 Prédios e comércio',items:['predio','mercado','agrosul','hotel','concessionaria']},
- {id:'ruas',n:'🛣️ Ruas e calçadas',items:['estrada','cruz','rodovia','faixa','rotatoria','meiofio','calcada']},
+ {id:'casas',n:'🏠 Casas',items:['casa_pequena','casa_moderna','casa_rustica','casa_familia','casa_sobrado','casa_chale','casaarcos','casa']},
+ {id:'predios',n:'🏢 Prédios e comércio',items:['predio','mercado','agrosul','hotel','concessionaria','praca_prefeitura']},
+ {id:'ruas',n:'🛣️ Ruas e calçadas',items:['estrada','cruz','curva','curva_esq','entroncamento_t','rodovia','faixa','rotatoria','meiofio','calcada']},
  {id:'natureza',n:'🌳 Natureza',items:['arvore','araucaria','palmeira','ipe','eucalipto','pinus','cipreste','mangueira','arbusto','flores']},
  {id:'luz',n:'💡 Iluminação',items:['poste','pconcreto','pduplo','pled','prural','pcolonial','ptorre']},
  {id:'placas',n:'🪧 Placas',items:['placaperim','placahotel']}
