@@ -174,7 +174,7 @@ function box(x,y,z,w,h,d,color,opts={}){const m=new THREE.Mesh(new THREE.BoxGeom
 function road(x,z,w,d){box(x,.025,z,w,.05,d,0x343b40)}
 function sidewalk(x,z,w,d){box(x,.08,z,w,.16,d,0xb9b5a8)}
 function plaza(x,z,w,d){box(x,.12,z,w,.24,d,0xc5bba7);for(let i=0;i<8;i++)tree(x-w/2+3+i*4,z-d/2+2)}
-function building(x,z,w,d,h,color,label){box(x,h/2,z,w,h,d,color);box(x,h+.12,z,w+.5,.25,d+.5,0x5a6470);for(let xx=x-w/2+1.5;xx<x+w/2-1;xx+=3){box(xx,h*.5,z-d/2-.04,1.1,2,.12,0x5b8a9a)}if(label){const sign=box(x,h-1,z-d/2-.12,Math.min(w-1,8),.8,.15,0x283b4b)}}
+const worldBuildingColliders=[];function building(x,z,w,d,h,color,label){const parts=[];parts.push(box(x,h/2,z,w,h,d,color));parts.push(box(x,h+.12,z,w+.5,.25,d+.5,0x5a6470));for(let xx=x-w/2+1.5;xx<x+w/2-1;xx+=3){parts.push(box(xx,h*.5,z-d/2-.04,1.1,2,.12,0x5b8a9a))}if(label){const sign=box(x,h-1,z-d/2-.12,Math.min(w-1,8),.8,.15,0x283b4b);parts.push(sign)}worldBuildingColliders.push(...parts)}
 function tree(x,z){const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.18,.25,2,7),mat(0x765033));trunk.position.set(x,1,z);add(trunk);const crown=new THREE.Mesh(new THREE.SphereGeometry(1.55,9,7),mat(0x36784a));crown.position.set(x,3,z);crown.castShadow=true;add(crown)}
 function lamp(x,z){const pole=new THREE.Mesh(new THREE.CylinderGeometry(.07,.09,4,8),mat(0x3a4147));pole.position.set(x,2,z);add(pole);const light=new THREE.Mesh(new THREE.SphereGeometry(.25,8,8),new THREE.MeshBasicMaterial({color:0xffedb0}));light.position.set(x,4.1,z);add(light)}
 function dash(x,z){box(x,.06,z,3,.04,.14,0xf3d16a)}
@@ -212,6 +212,11 @@ function updateCamera(dt){
  camera.position.set(camTarget.x+Math.sin(camYaw)*cp*camDist,camTarget.y+Math.sin(camPitch)*camDist,camTarget.z+Math.cos(camYaw)*cp*camDist);
  camera.lookAt(camTarget.x,camTarget.y,camTarget.z);
 }
+// Colisão do personagem contra construções posicionadas (ADM/local/remotas).
+const PLAYER_RADIUS=.48, PLAYER_HEIGHT=2.15;
+function visibleInTree(obj){for(let n=obj;n;n=n.parent)if(n.visible===false)return false;return true}
+function collidesWithBuild(px,pz){if(buildMode||spec||insideHouse)return false;const playerMinY=0,playerMaxY=PLAYER_HEIGHT;for(const mesh of worldBuildingColliders){if(!mesh||!mesh.parent||!visibleInTree(mesh))continue;mesh.updateMatrixWorld(true);if(!mesh.geometry.boundingBox)mesh.geometry.computeBoundingBox();const wb=mesh.geometry.boundingBox.clone().applyMatrix4(mesh.matrixWorld);if(wb.max.y<playerMinY||wb.min.y>playerMaxY)continue;if(px>wb.min.x-PLAYER_RADIUS&&px<wb.max.x+PLAYER_RADIUS&&pz>wb.min.z-PLAYER_RADIUS&&pz<wb.max.z+PLAYER_RADIUS)return true;}for(const group of userObjs){if(!group||!group.parent||!visibleInTree(group))continue;group.updateMatrixWorld(true);let hit=false;group.traverse(mesh=>{if(hit||!mesh.isMesh||!visibleInTree(mesh))return;const geo=mesh.geometry;if(!geo.boundingBox)geo.computeBoundingBox();const b=geo.boundingBox;if(!b)return;const wb=b.clone().applyMatrix4(mesh.matrixWorld);if(wb.max.y<playerMinY||wb.min.y>playerMaxY)return;if(px>wb.min.x-PLAYER_RADIUS&&px<wb.max.x+PLAYER_RADIUS&& pz>wb.min.z-PLAYER_RADIUS&&pz<wb.max.z+PLAYER_RADIUS)hit=true;});if(hit)return true;}return false}
+function movePlayerWithCollision(dx,dz){const oldX=player.position.x,oldZ=player.position.z;const nextX=oldX+dx;if(!collidesWithBuild(nextX,oldZ))player.position.x=nextX;else vel.x=0;const nextZ=oldZ+dz;if(!collidesWithBuild(player.position.x,nextZ))player.position.z=nextZ;else vel.z=0;}
 function animate(){
  requestAnimationFrame(animate);
  const dt=Math.min(clock.getDelta(),.05);
@@ -222,7 +227,7 @@ function animate(){
  const tx=(cy*ix+sy*iz)*maxSp,tz=(-sy*ix+cy*iz)*maxSp;
  const acc=1-Math.exp(-dt*(len>0?11:14));
  if(spec){specVel.x+=(tx-specVel.x)*acc;specVel.z+=(tz-specVel.z)*acc;specPos.x+=specVel.x*dt;specPos.z+=specVel.z*dt;specPos.y=clamp(specPos.y+(specY+((keys.e?1:0)-(keys.q?1:0)))*clamp(specPos.y,6,60)*1.2*dt,2,150);vel.x+=(0-vel.x)*acc;vel.z+=(0-vel.z)*acc}else{vel.x+=(tx-vel.x)*acc;vel.z+=(tz-vel.z)*acc}
- player.position.x+=vel.x*dt;player.position.z+=vel.z*dt;const fo=spec?specPos:player.position,gx=Math.round(fo.x/4)*4,gz=Math.round(fo.z/4)*4;groundMesh.position.set(gx,0,gz);sunLight.position.set(gx-45,75,gz+35);sunLight.target.position.set(gx,0,gz);
+ if(!spec)movePlayerWithCollision(vel.x*dt,vel.z*dt);else{specPos.x+=specVel.x*dt;specPos.z+=specVel.z*dt;}const fo=spec?specPos:player.position,gx=Math.round(fo.x/4)*4,gz=Math.round(fo.z/4)*4;groundMesh.position.set(gx,0,gz);sunLight.position.set(gx-45,75,gz+35);sunLight.target.position.set(gx,0,gz);
  const sp=Math.hypot(vel.x,vel.z);
  if(sp>.2){let d=Math.atan2(vel.x,vel.z)-player.rotation.y;d=Math.atan2(Math.sin(d),Math.cos(d));player.rotation.y+=d*(1-Math.exp(-dt*13))}
  // animação proporcional à velocidade
@@ -230,6 +235,7 @@ function animate(){
  playerParts.legL.rotation.x=Math.sin(walkPhase)*amp;playerParts.legR.rotation.x=-Math.sin(walkPhase)*amp;
  playerParts.armL.rotation.x=-Math.sin(walkPhase)*amp*.65;playerParts.armR.rotation.x=Math.sin(walkPhase)*amp*.65;
  updateCamera(dt);
+ updateDoorMotion();
  renderer.render(scene,camera);
  // Suaviza os movimentos dos jogadores remotos entre atualizações do Firebase
  Object.values(remoteHumans).forEach(h=>{const t=h.userData.netTarget;if(t){const k=1-Math.exp(-dt*10);h.position.x+=(t.x-h.position.x)*k;h.position.z+=(t.z-h.position.z)*k;let da=t.ry-h.rotation.y;da=Math.atan2(Math.sin(da),Math.cos(da));h.rotation.y+=da*k;}});
@@ -238,7 +244,9 @@ function animate(){
  syncPosition();
 }
 function drawMini(){const FX=spec?specPos.x:player.position.x,FZ=spec?specPos.z:player.position.z;const c=$('mini'),ctx=c.getContext('2d'),w=c.width,h=c.height;ctx.clearRect(0,0,w,h);ctx.fillStyle='#273f3b';ctx.fillRect(0,0,w,h);ctx.strokeStyle='#8b9692';ctx.lineWidth=13;for(let i=0;i<5;i++){ctx.beginPath();ctx.moveTo(i*60-20,0);ctx.lineTo(i*60+40,h);ctx.stroke()}ctx.fillStyle='#f0b34b';properties.filter(p=>p.ownerUid).forEach(p=>{let xx=w/2+(p.x-FX)*1.15,yy=h/2+(p.z-FZ)*1.15;if(xx>0&&xx<w&&yy>0&&yy<h){ctx.beginPath();ctx.arc(xx,yy,3,0,7);ctx.fill()}});ctx.fillStyle='#d9d4c4';userObjs.forEach(g=>{let xx=w/2+(g.position.x-FX)*1.15,yy=h/2+(g.position.z-FZ)*1.15;if(xx>0&&xx<w&&yy>0&&yy<h)ctx.fillRect(xx-2,yy-2,4,4)});ctx.fillStyle='#f5f7fa';ctx.beginPath();ctx.arc(w/2,h/2,7,0,7);ctx.fill()}
-let insideHouse=null;function enterHouse(p){if(!p.interior||!p.houseGroup){toast('Interior ainda não carregado.');return}insideHouse=p;p.interior.visible=true;player.position.set(p.interiorX,0,p.interiorZ);vel.x=vel.z=0;camDist=9;camYaw=0;toast('Você entrou na casa. Caminhe até a porta e use Sair para voltar.');$('actBtn').textContent='🚪 Sair da casa';$('actBtn').style.display='block'}function exitHouse(){if(!insideHouse)return;insideHouse.interior.visible=false;const r=insideHouse.houseGroup.rotation.y;player.position.set(insideHouse.x-8*Math.sin(r),0,insideHouse.z-8*Math.cos(r));vel.x=vel.z=0;const exited=insideHouse;insideHouse=null;toast('Você saiu da casa.');$('actBtn').style.display='none';$('actBtn').textContent='🏠 Ver imóvel'}
+let insideHouse=null,doorMotion=null;function animateDoorPivot(pivot,open,duration=.42,done=null){if(!pivot){if(done)done();return}doorMotion={pivot,from:pivot.rotation.y,to:open?Math.PI/2:0,start:performance.now(),duration:duration*1000,done};}function updateDoorMotion(){if(!doorMotion)return;const a=doorMotion, t=Math.min(1,(performance.now()-a.start)/a.duration), eased=t*t*(3-2*t);a.pivot.rotation.y=a.from+(a.to-a.from)*eased;if(t>=1){doorMotion=null;if(a.done)a.done()}}
+function enterHouse(p){if(!p.interior||!p.houseGroup){toast('Interior ainda não carregado.');return}animateDoorPivot(p.houseGroup.userData.doorPivot,true,.38,()=>{insideHouse=p;p.interior.visible=true;player.position.set(p.interiorX,0,p.interiorZ);vel.x=vel.z=0;camDist=9;camYaw=0;toast('Você entrou na casa. Caminhe até a porta e use Sair para voltar.');$('actBtn').textContent='🚪 Sair da casa';$('actBtn').style.display='block';animateDoorPivot(p.houseGroup.userData.doorPivot,false,.35)});}
+function exitHouse(){if(!insideHouse)return;const p=insideHouse;animateDoorPivot(p.houseGroup.userData.doorPivot,true,.38,()=>{p.interior.visible=false;const r=p.houseGroup.rotation.y;player.position.set(p.x-8*Math.sin(r),0,p.z-8*Math.cos(r));vel.x=vel.z=0;insideHouse=null;toast('Você saiu da casa.');$('actBtn').style.display='none';$('actBtn').textContent='🏠 Ver imóvel';animateDoorPivot(p.houseGroup.userData.doorPivot,false,.35)})}
 function checkNearby(){if(insideHouse){$('actBtn').textContent='🚪 Sair da casa';$('actBtn').style.display='block';return}let near=null,dist=999;properties.forEach(p=>{let d=Math.hypot(p.x-player.position.x,p.z-player.position.z);if(d<9&&d<dist){near=p;dist=d}});
  if(near!==nearProp){nearProp=near;if(near){selected=near;toast((near.ownerUid?'Casa de '+near.ownerName:'Casa à venda')+' • use o botão de ação');showProperty(near,false)}}
  if(nearProp&&nearProp.building){$('actBtn').textContent=!nearProp.ownerUid?'🏠 Comprar casa':nearProp.ownerUid===uid?(nearProp.locked?'🔓 Destrancar porta':'🔒 Trancar porta'):(nearProp.locked?'🔒 Porta trancada':'🚪 Entrar na casa')}else{$('actBtn').textContent='🏠 Ver imóvel'}$('actBtn').style.display=nearProp?'block':'none'}
@@ -359,8 +367,8 @@ joy.addEventListener('pointerup',joyEnd);joy.addEventListener('pointercancel',jo
 // Olhar ao redor: arrastar o dedo (ou o mouse) na tela gira a câmera
 const gameEl=$('game'),looks=new Map();let pinch0=0;
 const pinchDist=()=>{const a=[...looks.values()];return Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)};
-gameEl.addEventListener('pointerdown',e=>{if(e.target!==renderer.domElement)return;if(e.pointerType==='mouse'&&e.button!==0)return;looks.set(e.pointerId,{x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY,moved:false,t:performance.now()});try{gameEl.setPointerCapture(e.pointerId)}catch(_){}$('lookHint').style.opacity=0;if(looks.size===2){pinch0=pinchDist();looks.forEach(l=>l.moved=true)}});
-gameEl.addEventListener('pointermove',e=>{if(e.target!==renderer.domElement)return;if(e.pointerType==='mouse'&&looks.size===0){buildHover(e);return}
+gameEl.addEventListener('pointerdown',e=>{if(e.target!==renderer.domElement)return;if(e.pointerType==='mouse'&&e.button!==0)return;looks.set(e.pointerId,{x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY,moved:false,t:performance.now()});try{renderer.domElement.setPointerCapture(e.pointerId)}catch(_){}$('lookHint').style.opacity=0;if(looks.size===2){pinch0=pinchDist();looks.forEach(l=>l.moved=true)}});
+gameEl.addEventListener('pointermove',e=>{if(!looks.has(e.pointerId)){if(e.target===renderer.domElement&&e.pointerType==='mouse')buildHover(e);return}if(e.pointerType==='mouse'&&looks.size===0){buildHover(e);return}
  const l=looks.get(e.pointerId);if(!l)return;const dx=e.clientX-l.x,dy=e.clientY-l.y;l.x=e.clientX;l.y=e.clientY;
  if(Math.hypot(e.clientX-l.sx,e.clientY-l.sy)>10)l.moved=true;
  if(looks.size>=2){const d=pinchDist();if(pinch0)camDist=clamp(camDist*pinch0/d,6,spec?200:80);pinch0=d;return}
@@ -582,8 +590,10 @@ function buildHouseExterior(s,kind,preview=false){
   box(0,2,0,12,4,10,wall);box(0,4.1,0,12.5,.3,10.5,0xb8b5ad);box(0,5.3,0,12.6,2.4,10.6,roof);
   [-4,0,4].forEach(x=>box(x,2.1,-5.06,2.2,2.1,.1,0x79aebe));box(0,1.8,5.06,4,1.8,.1,0x79aebe);
  }
- // Porta externa e maçaneta (fachada frontal -Z)
- box(0,1.2,-4.15,1.45,2.4,.18,0x63432f);box(.48,1.25,-4.27,.08,.08,.08,0xd7b65a);
+ // Porta externa articulada (fachada frontal -Z), abre com animação
+ const doorPivot=new THREE.Group();doorPivot.position.set(-.725,0,-4.15);add(doorPivot);
+ const prevDoorGroup=curGroup;curGroup=doorPivot;box(.725,1.2,0,1.45,2.4,.18,0x63432f);box(1.16,1.25,-.12,.08,.08,.08,0xd7b65a);curGroup=prevDoorGroup;
+ if(!preview&&prevDoorGroup)prevDoorGroup.userData.doorPivot=doorPivot;
  box(0,.12,-5.1,3.6,.24,1.4,0xb8b2a7);box(0,.1,5.1,3.6,.2,1.4,0xb8b2a7);
  // Em pré-visualização, não cria a geometria interna distante do mapa.
  if(preview){return;}
